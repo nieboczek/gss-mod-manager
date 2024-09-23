@@ -1,0 +1,135 @@
+[gd_scene load_steps=3 format=3 uid="uid://c6570n2s1k1wv"]
+
+[ext_resource type="Theme" uid="uid://dged4041swr1" path="res://theme.tres" id="1_j4kl3"]
+[ext_resource type="Script" path="res://mod_manager.gd" id="1_kosmn"]
+
+[node name="ModManager" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_j4kl3")
+script = ExtResource("1_kosmn")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+
+[node name="MainContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="PathContainer" type="HBoxContainer" parent="MarginContainer/MainContainer"]
+layout_mode = 2
+
+[node name="PathLabel" type="Label" parent="MarginContainer/MainContainer/PathContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0, 0, 1)
+text = "GSS Path: C:/"
+
+[node name="ChangePathButton" type="Button" parent="MarginContainer/MainContainer/PathContainer"]
+layout_mode = 2
+text = "Change path"
+
+[node name="ModLoaderContainer" type="HBoxContainer" parent="MarginContainer/MainContainer"]
+layout_mode = 2
+
+[node name="ModLoaderLabel" type="Label" parent="MarginContainer/MainContainer/ModLoaderContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0, 0, 1)
+text = "Mod loader not installed"
+
+[node name="ModLoaderInstallButton" type="Button" parent="MarginContainer/MainContainer/ModLoaderContainer"]
+layout_mode = 2
+text = "Install mod loader"
+
+[node name="Separator" type="MarginContainer" parent="MarginContainer/MainContainer"]
+layout_mode = 2
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="ModListContainer" type="HBoxContainer" parent="MarginContainer/MainContainer"]
+layout_mode = 2
+
+[node name="ModListLabel" type="Label" parent="MarginContainer/MainContainer/ModListContainer"]
+layout_mode = 2
+text = "Mod list [0]"
+
+[node name="InstallModButton" type="Button" parent="MarginContainer/MainContainer/ModListContainer"]
+layout_mode = 2
+text = "Install mod"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/MainContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/MainContainer/ScrollContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+
+[node name="ModManagerContainer" type="HBoxContainer" parent="MarginContainer/MainContainer"]
+layout_mode = 2
+
+[node name="ModManagerLabel" type="Label" parent="MarginContainer/MainContainer/ModManagerContainer"]
+layout_mode = 2
+text = "GSS Mod Manager v0.1.0"
+
+[node name="ConfigureButton" type="Button" parent="MarginContainer/MainContainer/ModManagerContainer"]
+layout_mode = 2
+text = "Configure"
+
+[node name="BottomMargin" type="MarginContainer" parent="MarginContainer/MainContainer"]
+layout_mode = 2
+
+[node name="ConfigPanel" type="Panel" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 40.0
+offset_top = 40.0
+offset_right = -40.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="ConfigPanel"]
+layout_mode = 0
+offset_right = 10.0
+offset_bottom = 10.0
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+
+[node name="ConfigContainer" type="VBoxContainer" parent="ConfigPanel/MarginContainer"]
+layout_mode = 2
+
+[node name="NoticeLabel" type="Label" parent="ConfigPanel/MarginContainer/ConfigContainer"]
+layout_mode = 2
+text = "Nothing to configure here right now!
+
+TODO: Add configuration"
+
+[node name="FileDialog" type="FileDialog" parent="."]
+title = "Open a Directory"
+size = Vector2i(352, 180)
+ok_button_text = "Select Current Folder"
+dialog_hide_on_ok = true
+file_mode = 2
+access = 2
+filters = PackedStringArray("*.zip,*.rar,*.7z;Archive Files")
+use_native_dialog = true
+
+[connection signal="pressed" from="MarginContainer/MainContainer/PathContainer/ChangePathButton" to="." method="_on_change_path_button_pressed"]
+[connection signal="pressed" from="MarginContainer/MainContainer/ModLoaderContainer/ModLoaderInstallButton" to="." method="_on_mod_loader_install_button_pressed"]
+[connection signal="pressed" from="MarginContainer/MainContainer/ModListContainer/InstallModButton" to="." method="_on_install_mod_button_pressed"]
+[connection signal="pressed" from="MarginContainer/MainContainer/ModManagerContainer/ConfigureButton" to="." method="_on_configure_button_pressed"]
+[connection signal="dir_selected" from="FileDialog" to="." method="_on_file_dialog_dir_selected"]
+[connection signal="file_selected" from="FileDialog" to="." method="_on_file_dialog_file_selected"]

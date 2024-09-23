@@ -1,0 +1,9 @@
+[gd_resource type="Theme" load_steps=2 format=3 uid="uid://dged4041swr1"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8bbp8"]
+bg_color = Color(0.187176, 0.187176, 0.187176, 1)
+
+[resource]
+default_font_size = 24
+HBoxContainer/constants/separation = 10
+Panel/styles/panel = SubResource("StyleBoxFlat_8bbp8")
