@@ -53,6 +53,7 @@ var config_editor_path: String
 # TODO: Make editor for editing config configurable
 # TODO: Clean up this mess
 # TODO: Get icon
+# TODO: Add refresh button to mod list that just calls update_mod_list()
 
 ## Searches Steam paths for Grocery Store Simulator
 func detect_gss() -> void:
@@ -210,7 +211,7 @@ func _ready() -> void:
 	config = ConfigFile.new()
 	var err = config.load("user://config")
 	if err == ERR_FILE_NOT_FOUND:
-		config.save("user://config")
+		detect_gss()
 	else:
 		error("Read user config", err)
 	
