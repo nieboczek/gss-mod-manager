@@ -51,6 +51,7 @@ var config: ConfigFile
 var config_editor_path: String
 
 # TODO: Make editor for editing config configurable
+# TODO: Clean up this mess
 
 ## Searches Steam paths for Grocery Store Simulator
 func detect_gss() -> void:
