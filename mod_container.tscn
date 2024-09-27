@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://c46opjxqvwf5n"]
 
 [ext_resource type="Theme" uid="uid://dged4041swr1" path="res://theme.tres" id="1_iry1s"]
-[ext_resource type="Script" path="res://mod_container.gd" id="2_008ft"]
+[ext_resource type="Script" path="res://scripts/mod_container.gd" id="2_008ft"]
 
 [node name="ModContainer" type="HBoxContainer"]
 offset_right = 40.0

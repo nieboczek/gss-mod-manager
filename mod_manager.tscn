@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://c6570n2s1k1wv"]
 
 [ext_resource type="Theme" uid="uid://dged4041swr1" path="res://theme.tres" id="1_j4kl3"]
-[ext_resource type="Script" path="res://mod_manager.gd" id="1_kosmn"]
+[ext_resource type="Script" path="res://scripts/mod_manager.gd" id="1_kosmn"]
 
 [node name="ModManager" type="Control"]
 layout_mode = 3
@@ -62,6 +62,10 @@ layout_mode = 2
 layout_mode = 2
 text = "Mod list [0]"
 
+[node name="RefreshButton" type="Button" parent="MarginContainer/MainContainer/ModListContainer"]
+layout_mode = 2
+text = "Refresh"
+
 [node name="InstallModButton" type="Button" parent="MarginContainer/MainContainer/ModListContainer"]
 layout_mode = 2
 text = "Install mod"
@@ -79,7 +83,7 @@ layout_mode = 2
 
 [node name="ModManagerLabel" type="Label" parent="MarginContainer/MainContainer/ModManagerContainer"]
 layout_mode = 2
-text = "GSS Mod Manager v0.1.1"
+text = "GSS Mod Manager v0.2"
 
 [node name="ConfigureButton" type="Button" parent="MarginContainer/MainContainer/ModManagerContainer"]
 layout_mode = 2
@@ -129,6 +133,7 @@ use_native_dialog = true
 
 [connection signal="pressed" from="MarginContainer/MainContainer/PathContainer/ChangePathButton" to="." method="_on_change_path_button_pressed"]
 [connection signal="pressed" from="MarginContainer/MainContainer/ModLoaderContainer/ModLoaderInstallButton" to="." method="_on_mod_loader_install_button_pressed"]
+[connection signal="pressed" from="MarginContainer/MainContainer/ModListContainer/RefreshButton" to="." method="_on_refresh_list_button_pressed"]
 [connection signal="pressed" from="MarginContainer/MainContainer/ModListContainer/InstallModButton" to="." method="_on_install_mod_button_pressed"]
 [connection signal="pressed" from="MarginContainer/MainContainer/ModManagerContainer/ConfigureButton" to="." method="_on_configure_button_pressed"]
 [connection signal="dir_selected" from="FileDialog" to="." method="_on_file_dialog_dir_selected"]

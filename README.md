@@ -8,6 +8,9 @@ Mod Manager for Grocery Store Simulator built using Godot.
 Fork the repository and apply changes in Godot.  
 After you're done making changes, you can make a pull request.
 
+To test you will need the latest release, unzip it and grab 7z.exe, 7z.dll, mod folder, UE4SS folder.
+Then put it into where you built your release.
+
 # How to use
 After downloading, open the gss-mod-manager.exe and select your game folder (if not automatically detected).
 After selecting the game folder you should see if you have installed the mod loader and if you have any mods.
