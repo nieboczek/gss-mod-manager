@@ -3,7 +3,7 @@ class_name ModManager extends Control
 @onready var main = $MarginContainer/MainContainer
 @onready var file_dialog = $FileDialog
 @onready var config_panel = $ConfigPanel
-@onready var mod_containers: Control = main.get_node("ScrollContainer/MarginContainer")
+@onready var mod_containers: Control = main.get_node("MarginContainer/ScrollContainer/ModContainers")
 
 @onready var path_container: PathContainer = main.get_node("PathContainer")
 @onready var mod_loader_container: ModLoaderContainer = main.get_node("ModLoaderContainer")
@@ -30,9 +30,8 @@ var editor_thread := Thread.new()
 # NOTE: Only test in exported! (Unless you find a way to do it in the editor)
 
 # TODO: Make editor for editing config configurable
-# ^^^^^ Alternate solution: Try to make a standard on how to comment your config.
+# ^^^^^ Better, alternative solution: Try to make a standard on how to write config.
 # ^^^^^ Then make the config editor built in (Topic to discuss)
-# TODO: Clean up this mess
 # TODO: Get icon
 
 ## Returns dictionary with the schema { mod_name (String): on (bool) }

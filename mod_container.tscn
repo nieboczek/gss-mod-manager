@@ -4,8 +4,9 @@
 [ext_resource type="Script" path="res://scripts/mod_container.gd" id="2_008ft"]
 
 [node name="ModContainer" type="HBoxContainer"]
-offset_right = 40.0
-offset_bottom = 40.0
+custom_minimum_size = Vector2(449, 42)
+offset_right = 449.0
+offset_bottom = 42.0
 theme = ExtResource("1_iry1s")
 script = ExtResource("2_008ft")
 

@@ -24,7 +24,8 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_bottom = 4
 
 [node name="MainContainer" type="VBoxContainer" parent="MarginContainer"]
 layout_mode = 2
@@ -80,27 +81,29 @@ text = "Refresh"
 layout_mode = 2
 text = "Install mod"
 
-[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/MainContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/MainContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 4
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/MainContainer/MarginContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/MainContainer/ScrollContainer"]
+[node name="ModContainers" type="VBoxContainer" parent="MarginContainer/MainContainer/MarginContainer/ScrollContainer"]
 layout_mode = 2
-theme_override_constants/margin_left = 24
 
 [node name="ModManagerContainer" type="HBoxContainer" parent="MarginContainer/MainContainer"]
 layout_mode = 2
 
 [node name="ModManagerLabel" type="Label" parent="MarginContainer/MainContainer/ModManagerContainer"]
 layout_mode = 2
-text = "GSS Mod Manager v0.3"
+text = "GSS Mod Manager v0.3.1"
 
 [node name="ConfigureButton" type="Button" parent="MarginContainer/MainContainer/ModManagerContainer"]
 layout_mode = 2
 text = "Configure"
-
-[node name="BottomMargin" type="MarginContainer" parent="MarginContainer/MainContainer"]
-layout_mode = 2
 
 [node name="ConfigPanel" type="Panel" parent="."]
 visible = false
