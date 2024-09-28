@@ -2,7 +2,7 @@ extends Node
 
 ## Copies from path to destination_path recursively, destination_path must exist
 ## Returns error code
-static func copy_recursive(from: String, to: String, folder_name: String = "") -> int:
+func copy_recursive(from: String, to: String, folder_name: String = "") -> int:
 	var err = DirAccess.make_dir_absolute("%s%s" % [to, folder_name])
 	if err != OK and err != ERR_ALREADY_EXISTS:
 		return err
@@ -30,7 +30,7 @@ static func copy_recursive(from: String, to: String, folder_name: String = "") -
 
 ## Deletes directories recursively
 ## Returns error code
-static func remove_recursive(path: String) -> int:
+func remove_recursive(path: String) -> int:
 	var dir = DirAccess.open(path)
 	if dir:
 		dir.list_dir_begin()
