@@ -162,6 +162,8 @@ func _process(_delta: float) -> void:
 		editor_thread.wait_to_finish()
 
 func _ready() -> void:
+	#ConfigParser.test_regex()
+	ConfigParser.parse("res://config_test.txt")
 	# Set self as the ModManager in containers
 	path_container.mm = self
 	mod_loader_container.mm = self
