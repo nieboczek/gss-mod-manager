@@ -1,5 +1,6 @@
 extends Node
 
+const KEY_REGEX := r"^\b(LEFT_MOUSE_BUTTON|RIGHT_MOUSE_BUTTON|CANCEL|MIDDLE_MOUSE_BUTTON|XBUTTON_ONE|XBUTTON_TWO|BACKSPACE|TAB|CLEAR|RETURN|PAUSE|CAPS_LOCK|IME_KANA|IME_HANGUEL|IME_HANGUL|IME_ON|IME_JUNJA|IME_FINAL|IME_HANJA|IME_KANJI|IME_OFF|ESCAPE|IME_CONVERT|IME_NONCONVERT|IME_ACCEPT|IME_MODECHANGE|SPACE|PAGE_UP|PAGE_DOWN|END|HOME|LEFT_ARROW|UP_ARROW|RIGHT_ARROW|DOWN_ARROW|SELECT|PRINT|EXECUTE|PRINT_SCREEN|INS|DEL|HELP|ZERO|ONE|TWO|THREE|FOUR|FIVE|SIX|SEVEN|EIGHT|NINE|A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z|LEFT_WIN|RIGHT_WIN|APPS|SLEEP|NUM_ZERO|NUM_ONE|NUM_TWO|NUM_THREE|NUM_FOUR|NUM_FIVE|NUM_SIX|NUM_SEVEN|NUM_EIGHT|NUM_NINE|MULTIPLY|ADD|SEPARATOR|SUBTRACT|DECIMAL|DIVIDE|F1|F2|F3|F4|F5|F6|F7|F8|F9|F10|F11|F12|F13|F14|F15|F16|F17|F18|F19|F20|F21|F22|F23|F24|NUM_LOCK|SCROLL_LOCK|BROWSER_BACK|BROWSER_FORWARD|BROWSER_REFRESH|BROWSER_STOP|BROWSER_SEARCH|BROWSER_FAVORITES|BROWSER_HOME|VOLUME_MUTE|VOLUME_DOWN|VOLUME_UP|MEDIA_NEXT_TRACK|MEDIA_PREV_TRACK|MEDIA_STOP|MEDIA_PLAY_PAUSE|LAUNCH_MAIL|LAUNCH_MEDIA_SELECT|LAUNCH_APP1|LAUNCH_APP2|OEM_ONE|OEM_PLUS|OEM_COMMA|OEM_MINUS|OEM_PERIOD|OEM_TWO|OEM_THREE|OEM_FOUR|OEM_FIVE|OEM_SIX|OEM_SEVEN|OEM_EIGHT|OEM_102|IME_PROCESS|PACKET|ATTN|CRSEL|EXSEL|EREOF|PLAY|ZOOM|PA1|OEM_CLEAR)\b$"
 const VALID_KEYS := [
 	'LEFT_MOUSE_BUTTON', 'RIGHT_MOUSE_BUTTON', 'CANCEL', 'MIDDLE_MOUSE_BUTTON', 'XBUTTON_ONE',
 	'XBUTTON_TWO', 'BACKSPACE', 'TAB', 'CLEAR', 'RETURN', 'PAUSE', 'CAPS_LOCK', 'IME_KANA',
@@ -26,11 +27,18 @@ enum RangeEnum { FLOAT, INT, NONE }
 
 class Type:
 	var validation_func: Callable
+	var list_type: String
 	var range_min_int: int
 	var range_max_int: int
 	var range_min_float: float
 	var range_max_float: float
 	var range_enum: RangeEnum = RangeEnum.NONE
+	
+	static func list(validation_function: Callable, list_lua_type: String) -> Type:
+		var type = new()
+		type.validation_func = validation_function
+		type.list_type = list_lua_type
+		return type
 	
 	static func integer(validation_function: Callable, range_min: int, range_max: int) -> Type:
 		var type = new()
@@ -58,6 +66,8 @@ class Type:
 			return validation_func.call(string, range_min_int, range_max_int)
 		elif range_enum == RangeEnum.FLOAT:
 			return validation_func.call(string, range_min_float, range_max_float)
+		elif list_type:
+			return validation_func.call(string, list_type)
 		return validation_func.call(string)
 
 class ConfigField:
@@ -71,6 +81,8 @@ class ConfigField:
 		config_field.type = field_type
 		config_field.default = field_default
 		return config_field
+
+# TODO: Fix floats (& ints) being not validated correctly (when precision is present, but not range)
 
 func parse(path: String) -> void:
 	# CAUTION: Welcome to RegEx hell! Please consider using https://regexr.com/
@@ -96,9 +108,9 @@ func parse(path: String) -> void:
 			line = line.lstrip(" \t").rstrip(" \t")
 			if line.begins_with("--@description "):
 				if current_field.description:
-					print("@ConfigParser: Doubled --@description [Line %s]" % line_number)
-					return
-				current_field.description = line.trim_prefix("--@description ")
+					current_field.description += "\n%s" % line.trim_prefix("--@description ")
+				else:
+					current_field.description = line.trim_prefix("--@description ")
 			
 			
 			elif line.begins_with("--@type "):
@@ -106,7 +118,8 @@ func parse(path: String) -> void:
 					print("@ConfigParser: Doubled --@type [Line %s]" % line_number)
 					return
 				
-				regex.compile(r"(?!--@type)(?<type>int|float) (?<range_min>[+-]?\d+)\.\.(?<range_max>[+-]?\d+)")
+				# i told you
+				regex.compile(r"(?!--@type)(?<type>int|float)( precision=(?<precision>\d+))?( range=(?<range_min>[+-]?\d+)\.\.(?<range_max>[+-]?\d+))?")
 				re_match = regex.search(line)
 				
 				if re_match:
@@ -126,7 +139,11 @@ func parse(path: String) -> void:
 				
 				if re_match:
 					var type = re_match.get_string("type")
-					# TODO: Implement the rest
+					regex.compile("^Key|int|float|string$")
+					if regex.search(type) != null:
+						current_field.type = Type.list(validate_list, type)
+					else:
+						print("@ConfigParser: Unsupported type for list: %s [Line %s]" % [type, line_number])
 				
 				var type = line.trim_prefix("--@type ")
 				match type:
@@ -176,15 +193,30 @@ func parse(path: String) -> void:
 			
 			line_number += 1
 	else:
-		return FileAccess.get_open_error()
+		var err = FileAccess.get_open_error()
+		print("Open config status: %s [%s]" % [error_string(err), err])
+
+func test() -> void:
+	print(validate_list("		{'pizza got broken :(',	 'plz help'  }	 ", "string"))
+
+func validate_list(string: String, type: String) -> bool:
+	var allowed_values_regex := ""
+	match type:
+		"string":
+			allowed_values_regex = "\\s*('([^'\\\\]|\\\\.)*'|\"([^\"\\\\]|\\\\.)*\")\\s*"
+		"Key":
+			allowed_values_regex = KEY_REGEX
+		"int":
+			allowed_values_regex = r"^\d+$"
+		"float":
+			allowed_values_regex = r"^\d+(\.\d+)?$"
+	assert(allowed_values_regex != "", "No RegEx provided for type %s at validate_list" % type)
+	var regex = RegEx.create_from_string(r"^\s*{\s*((%s\s*,\s*)*%s\s*(,\s*)?)?\s*}\s*$" % [allowed_values_regex, allowed_values_regex])
+	return regex.search(string) != null
 
 func validate_string(string: String) -> bool:
-	var regex = RegEx.new()
-	regex.compile(r"^'[^']*(?:\\'[^']*)*'$")
-	var result1 = regex.search(string) != null
-	regex.compile("^\"[^\"]*(?:\\\\\"[^\"]*)*\"$")
-	var result2 = regex.search(string) != null
-	return result1 or result2
+	var regex = RegEx.create_from_string("^\\s*('([^'\\\\]|\\\\.)*'|\"([^\"\\\\]|\\\\.)*\")\\s*$")
+	return regex.search(string).get_string() != ""
 
 func validate_with_range_int(string: String, range_min: int, range_max: int) -> bool:
 	var integer = int(string)
