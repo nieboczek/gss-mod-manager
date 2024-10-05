@@ -163,7 +163,7 @@ func _process(_delta: float) -> void:
 
 func _ready() -> void:
 	ConfigParser.test()
-	ConfigParser.parse("res://config_test.txt")
+	print(ConfigParser.parse("res://config_test.txt"))
 	# Set self as the ModManager in containers
 	path_container.mm = self
 	mod_loader_container.mm = self

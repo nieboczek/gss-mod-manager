@@ -19,7 +19,6 @@ local config = {
 	--@default { ModifierKey.CONTROL }
 	-- list[x] and dict[x] are instead of table[x]
 	-- name for this variable will be "Modifier keys"
-	-- camelCase currently not supported (I can add support if it becomes more common)
 	modifier_keys = {ModifierKey.CONTROL,ModifierKey.ALT}
 }
 return config
