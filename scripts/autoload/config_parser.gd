@@ -226,6 +226,7 @@ func parse(path: String) -> Array[ConfigField]:
 		print("Open config status: %s [%s]" % [error_string(err), err])
 	return []
 
+
 func validate_list(string: String, type: String) -> bool:
 	var allowed_values_regex := ""
 	match type:

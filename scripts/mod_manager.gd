@@ -3,6 +3,7 @@ class_name ModManager extends Control
 @onready var main = $MarginContainer/MainContainer
 @onready var file_dialog = $FileDialog
 @onready var config_panel = $ConfigPanel
+@onready var mod_manager_config_container = $ConfigPanel/MarginContainer/ModManagerConfigContainer
 @onready var mod_containers: Control = main.get_node("MarginContainer/ScrollContainer/ModContainers")
 
 @onready var path_container: PathContainer = main.get_node("PathContainer")
@@ -24,8 +25,6 @@ var gss_path: String:
 		path_container.post_path_change()
 		update_mod_list()
 var config: ConfigFile
-var config_editor_path: String
-var editor_thread := Thread.new()
 
 # NOTE: Only test in exported!
 
@@ -69,6 +68,9 @@ func update_mod_list() -> void:
 		mod_containers.add_child(container)
 		
 		container.set_toggled(list[mod])
+		container.set_configurable(FileAccess.file_exists(
+			"%s/Simulatorita/Binaries/Win64/Mods/%s/Scripts/config.lua" % [gss_path, mod]
+		))
 		container.configure.connect(_on_configure_mod)
 		container.delete.connect(_on_delete_mod)
 		container.toggled.connect(_on_toggle_mod)
@@ -76,20 +78,14 @@ func update_mod_list() -> void:
 	
 	mod_list_container.set_count(non_builtin_mod_count)
 
-func run_config_editor() -> void:
-	var err = OS.execute("notepad", [config_editor_path])
-	os_error("Execute config editor", err)
-
 func _on_configure_button_pressed() -> void:
 	config_panel.visible = !config_panel.visible
+	mod_manager_config_container.visible = !mod_manager_config_container.visible
 
 func _on_configure_mod(mod_name: String) -> void:
-	for file in DirAccess.get_files_at("%s/Simulatorita/Binaries/Win64/Mods/%s/Scripts" % [gss_path, mod_name]):
-		if file.begins_with("config"):
-			config_editor_path = "%s/Simulatorita/Binaries/Win64/Mods/%s/Scripts/%s" % [gss_path, mod_name, file]
-			var err = editor_thread.start(run_config_editor, Thread.PRIORITY_LOW)
-			error("Execute notepad in thread", err)
-			return
+	var fields = ConfigParser.parse("%s/Simulatorita/Binaries/Win64/Mods/%s/Scripts/config.lua" % [gss_path, mod_name])
+	for field in fields:
+		ConfigFieldContainer.with(field)
 
 func _on_delete_mod(mod_name: String) -> void:
 	if not error("Remove mod", Files.remove_mod(gss_path, mod_name)):
@@ -100,10 +96,6 @@ func _on_toggle_mod(mod_name: String, on: bool) -> void:
 
 func _on_file_dialog_gss_path_selected(dir: String) -> void:
 	gss_path = dir
-
-func _process(_delta: float) -> void:
-	if editor_thread.is_started() and !editor_thread.is_alive():
-		editor_thread.wait_to_finish()
 
 func _ready() -> void:
 	# Set self as the ModManager in containers

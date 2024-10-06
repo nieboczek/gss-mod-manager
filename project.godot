@@ -18,8 +18,8 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-Files="*res://scripts/files.gd"
-ConfigParser="*res://scripts/config_parser.gd"
+ConfigParser="*res://scripts/autoload/config_parser.gd"
+Files="*res://scripts/autoload/files.gd"
 
 [rendering]
 
