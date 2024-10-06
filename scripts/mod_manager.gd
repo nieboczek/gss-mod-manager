@@ -27,11 +27,9 @@ var config: ConfigFile
 var config_editor_path: String
 var editor_thread := Thread.new()
 
-# NOTE: Only test in exported! (Unless you find a way to do it in the editor)
+# NOTE: Only test in exported!
 
-# TODO: Make editor for editing config configurable
-# ^^^^^ Better, alternative solution: Try to make a standard on how to write config.
-# ^^^^^ Then make the config editor built in (Topic to discuss)
+# TODO: Make config editor
 # TODO: Get icon
 
 ## Returns dictionary with the schema { mod_name (String): on (bool) }
@@ -82,6 +80,9 @@ func run_config_editor() -> void:
 	var err = OS.execute("notepad", [config_editor_path])
 	os_error("Execute config editor", err)
 
+func _on_configure_button_pressed() -> void:
+	config_panel.visible = !config_panel.visible
+
 func _on_configure_mod(mod_name: String) -> void:
 	for file in DirAccess.get_files_at("%s/Simulatorita/Binaries/Win64/Mods/%s/Scripts" % [gss_path, mod_name]):
 		if file.begins_with("config"):
@@ -91,68 +92,11 @@ func _on_configure_mod(mod_name: String) -> void:
 			return
 
 func _on_delete_mod(mod_name: String) -> void:
-	Files.remove_recursive("%s/Simulatorita/Binaries/Win64/Mods/%s" % [gss_path, mod_name])
-	var file = FileAccess.open("%s/Simulatorita/Binaries/Win64/Mods/mods.txt" % gss_path, FileAccess.READ)
-	if file:
-		var lines = []
-		while not file.eof_reached():
-			lines.append(file.get_line())
-		file.close()
-		
-		var new_lines = []
-		for line in lines:
-			if not line.begins_with(mod_name + " : "):
-				new_lines.append(line)
-		
-		file = FileAccess.open("%s/Simulatorita/Binaries/Win64/Mods/mods.txt" % gss_path, FileAccess.WRITE)
-		if file:
-			for i in range(len(new_lines)):
-				file.store_string(lines[i])
-				if i < len(new_lines) - 1:
-					file.store_string("\n")
-			
-			file.close()
-			update_mod_list()
-			print("Mod deleted successfully")
-		else:
-			var err = FileAccess.get_open_error()
-			error("Open mods.txt file", err)
-	else:
-		var err = FileAccess.get_open_error()
-		error("Open mods.txt file", err)
-
-func _on_configure_button_pressed() -> void:
-	config_panel.visible = !config_panel.visible
+	if not error("Remove mod", Files.remove_mod(gss_path, mod_name)):
+		update_mod_list()
 
 func _on_toggle_mod(mod_name: String, on: bool) -> void:
-	var file = FileAccess.open("%s/Simulatorita/Binaries/Win64/Mods/mods.txt" % gss_path, FileAccess.READ)
-	if file:
-		var lines = []
-		while not file.eof_reached():
-			lines.append(file.get_line())
-		file.close()
-		
-		for i in range(len(lines)):
-			if lines[i].begins_with(mod_name + " : "):
-				var new_value = '1' if on else '0'
-				lines[i] = mod_name + " : " + new_value
-				break
-		
-		file = FileAccess.open("%s/Simulatorita/Binaries/Win64/Mods/mods.txt" % gss_path, FileAccess.WRITE)
-		if file:
-			for i in range(len(lines)):
-				file.store_string(lines[i])
-				if i < len(lines) - 1:
-					file.store_string("\n")
-			
-			file.close()
-			print("Mod toggled succesfully")
-		else:
-			var err = FileAccess.get_open_error()
-			error("Opening mods.txt file", err)
-	else:
-		var err = FileAccess.get_open_error()
-		error("Opening mods.txt file", err)
+	error("Toggle mod", Files.toggle_mod(gss_path, mod_name, on))
 
 func _on_file_dialog_gss_path_selected(dir: String) -> void:
 	gss_path = dir
@@ -162,8 +106,6 @@ func _process(_delta: float) -> void:
 		editor_thread.wait_to_finish()
 
 func _ready() -> void:
-	ConfigParser.test()
-	print(ConfigParser.parse("res://config_test.txt"))
 	# Set self as the ModManager in containers
 	path_container.mm = self
 	mod_loader_container.mm = self
@@ -183,7 +125,7 @@ func _ready() -> void:
 		gss_path = path
 
 ## Returns a boolean that if is true, action didn't complete successfully
-func error(action: String, err: int) -> bool:
+func error(action: String, err: Error) -> bool:
 	if err:
 		print("%s status: %s [%s]" % [action, error_string(err), err])
 		return true

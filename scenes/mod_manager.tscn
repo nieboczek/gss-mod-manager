@@ -1,10 +1,10 @@
 [gd_scene load_steps=6 format=3 uid="uid://c6570n2s1k1wv"]
 
-[ext_resource type="Theme" uid="uid://dged4041swr1" path="res://theme.tres" id="1_j4kl3"]
-[ext_resource type="Script" path="res://scripts/mod_manager.gd" id="1_kosmn"]
-[ext_resource type="Script" path="res://scripts/path_container.gd" id="3_2w3wq"]
-[ext_resource type="Script" path="res://scripts/mod_loader_container.gd" id="4_66fcs"]
-[ext_resource type="Script" path="res://scripts/mod_list_container.gd" id="5_7qwuo"]
+[ext_resource type="Theme" uid="uid://dged4041swr1" path="res://theme.tres" id="1_1wikn"]
+[ext_resource type="Script" path="res://scripts/mod_manager.gd" id="2_37t4h"]
+[ext_resource type="Script" path="res://scripts/path_container.gd" id="3_a8731"]
+[ext_resource type="Script" path="res://scripts/mod_loader_container.gd" id="4_vi72b"]
+[ext_resource type="Script" path="res://scripts/mod_list_container.gd" id="5_pbjar"]
 
 [node name="ModManager" type="Control"]
 layout_mode = 3
@@ -13,8 +13,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme = ExtResource("1_j4kl3")
-script = ExtResource("1_kosmn")
+theme = ExtResource("1_1wikn")
+script = ExtResource("2_37t4h")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -32,7 +32,7 @@ layout_mode = 2
 
 [node name="PathContainer" type="HBoxContainer" parent="MarginContainer/MainContainer"]
 layout_mode = 2
-script = ExtResource("3_2w3wq")
+script = ExtResource("3_a8731")
 
 [node name="PathLabel" type="Label" parent="MarginContainer/MainContainer/PathContainer"]
 layout_mode = 2
@@ -49,7 +49,7 @@ text = "Change path"
 
 [node name="ModLoaderContainer" type="HBoxContainer" parent="MarginContainer/MainContainer"]
 layout_mode = 2
-script = ExtResource("4_66fcs")
+script = ExtResource("4_vi72b")
 
 [node name="ModLoaderLabel" type="Label" parent="MarginContainer/MainContainer/ModLoaderContainer"]
 layout_mode = 2
@@ -67,7 +67,7 @@ theme_override_constants/margin_bottom = 4
 
 [node name="ModListContainer" type="HBoxContainer" parent="MarginContainer/MainContainer"]
 layout_mode = 2
-script = ExtResource("5_7qwuo")
+script = ExtResource("5_pbjar")
 
 [node name="ModListLabel" type="Label" parent="MarginContainer/MainContainer/ModListContainer"]
 layout_mode = 2
@@ -125,14 +125,19 @@ offset_bottom = 10.0
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 10
 
-[node name="ConfigContainer" type="VBoxContainer" parent="ConfigPanel/MarginContainer"]
+[node name="ModManagerConfigContainer" type="VBoxContainer" parent="ConfigPanel/MarginContainer"]
+visible = false
 layout_mode = 2
 
-[node name="NoticeLabel" type="Label" parent="ConfigPanel/MarginContainer/ConfigContainer"]
+[node name="NoticeLabel" type="Label" parent="ConfigPanel/MarginContainer/ModManagerConfigContainer"]
 layout_mode = 2
 text = "Nothing to configure here right now!
 
 TODO: Add configuration"
+
+[node name="ModConfigContainer" type="VBoxContainer" parent="ConfigPanel/MarginContainer"]
+visible = false
+layout_mode = 2
 
 [node name="FileDialog" type="FileDialog" parent="."]
 title = "Open a Directory"

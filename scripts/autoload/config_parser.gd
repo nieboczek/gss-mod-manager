@@ -26,44 +26,45 @@ const VALID_KEYS := [
 enum ArgEnum { FLOAT_RANGE, INT_RANGE, FLOAT_PRECISION, FLOAT_PRECISION_RANGE, NONE }
 
 class Type:
+	var string_representation: String
 	var validation_func: Callable
 	var list_type: String
 	var range_min_int: int
 	var range_max_int: int
 	var range_min_float: float
 	var range_max_float: float
-	var max_precision: int
+	var precision: int
 	var arg_enum: ArgEnum = ArgEnum.NONE
 	
-	static func list(validation_function: Callable, list_lua_type: String) -> Type:
+	static func list(as_string: String, validation_function: Callable, list_lua_type: String) -> Type:
 		var type = new()
+		type.string_representation = as_string
 		type.validation_func = validation_function
 		type.list_type = list_lua_type
 		return type
 	
-	static func integer(validation_function: Callable, range_min: int, range_max: int) -> Type:
+	static func integer(as_string: String, validation_function: Callable, range_min: int, range_max: int) -> Type:
 		var type = new()
+		type.string_representation = as_string
 		type.validation_func = validation_function
 		type.range_min_int = range_min
 		type.range_max_int = range_max
 		type.arg_enum = ArgEnum.INT_RANGE
 		return type
 	
-	static func float_num(validation_function: Callable, range_min: float = 0, range_max: float = 0, max_precision: int = 0, range_enabled: bool = false, precision_enabled: bool = false) -> Type:
+	static func float_num(as_string: String, validation_function: Callable, range_min: float, range_max: float, max_precision: int, argument_enum: ArgEnum) -> Type:
 		var type = new()
+		type.string_representation = as_string
 		type.validation_func = validation_function
 		type.range_min_float = range_min
 		type.range_max_float = range_max
-		if range_enabled and precision_enabled:
-			type.arg_enum = ArgEnum.FLOAT_PRECISION_RANGE
-		elif range_enabled:
-			type.arg_enum = ArgEnum.FLOAT_RANGE
-		else:
-			type.arg_enum = ArgEnum.FLOAT_PRECISION
+		type.precision = max_precision
+		type.arg_enum = argument_enum
 		return type
 	
-	static func with(validation_function: Callable) -> Type:
+	static func with(as_string: String, validation_function: Callable) -> Type:
 		var type = new()
+		type.string_representation = as_string
 		type.validation_func = validation_function
 		return type
 	
@@ -73,9 +74,9 @@ class Type:
 		elif arg_enum == ArgEnum.FLOAT_RANGE:
 			return validation_func.call(string, range_min_float, range_max_float)
 		elif arg_enum == ArgEnum.FLOAT_PRECISION:
-			return validation_func.call(string, max_precision)
+			return validation_func.call(string, precision)
 		elif arg_enum == ArgEnum.FLOAT_PRECISION_RANGE:
-			return validation_func.call(string, range_min_float, range_max_float, max_precision)
+			return validation_func.call(string, range_min_float, range_max_float, precision)
 		elif list_type:
 			return validation_func.call(string, list_type)
 		return validation_func.call(string)
@@ -93,9 +94,8 @@ class ConfigField:
 		return config_field
 	
 	func _to_string() -> String:
-		return "ConfigField(name=%s)" % name
+		return "ConfigField(%s)" % name
 
-# TODO: Fix floats (& ints) being not validated correctly (when precision is present, but not range)
 
 func parse(path: String) -> Array[ConfigField]:
 	# CAUTION: Welcome to RegEx hell! Please consider using https://regexr.com/
@@ -140,19 +140,20 @@ func parse(path: String) -> Array[ConfigField]:
 					var range_min = re_match.get_string("range_min")
 					var range_max = re_match.get_string("range_max")
 					var precision = re_match.get_string("precision")
-					if range_min != "" and precision != "":
+					var has_precision_or_range = not range_min.is_empty() or not precision.is_empty()
+					if has_precision_or_range:
 						if re_match.get_string("type") == "int":
 							if precision != "":
 								print("@ConfigParser: Precision not allowed with int")
 								return []
-							current_field.type = Type.integer(validate_with_range_int, int(range_min), int(range_max))
+							current_field.type = Type.integer("int:range", validate_with_range_int, int(range_min), int(range_max))
 						else:
 							if precision == "":
-								current_field.type = Type.float_num(validate_with_range_float, float(range_min), float(range_max), 0, true)
+								current_field.type = Type.float_num("float:range", validate_with_range_float, float(range_min), float(range_max), 0, ArgEnum.FLOAT_RANGE)
 							elif range_min == "":
-								current_field.type = Type.float_num(validate_with_precision_float, 0, 0, int(precision), false, true)
+								current_field.type = Type.float_num("float:precision", validate_with_precision_float, 0, 0, int(precision), ArgEnum.FLOAT_PRECISION)
 							else:
-								current_field.type = Type.float_num(validate_with_range_precision_float, float(range_min), float(range_max), int(precision), true, true)
+								current_field.type = Type.float_num("float:range:precision", validate_with_range_precision_float, float(range_min), float(range_max), int(precision), ArgEnum.FLOAT_PRECISION_RANGE)
 						
 						# Increment line_number, because we continue
 						line_number += 1
@@ -162,23 +163,27 @@ func parse(path: String) -> Array[ConfigField]:
 				re_match = regex.search(line)
 				
 				if re_match:
-					var type = re_match.get_string("type")
-					regex.compile("^int|float|string|ModifierKey$")
-					if regex.search(type) != null:
-						current_field.type = Type.list(validate_list, type)
+					var re_type = re_match.get_string("type")
+					regex.compile("^(int|float|string|ModifierKey)$")
+					if regex.search(re_type) != null:
+						current_field.type = Type.list("list;%s" % re_type, validate_list, re_type)
+						# Increment line_number, because we continue
+						line_number += 1
+						continue
 					else:
-						print("@ConfigParser: Unsupported type for list: %s [Line %s]" % [type, line_number])
+						print("@ConfigParser: Unsupported type for list: %s [Line %s]" % [re_type, line_number])
+						return []
 				
 				var type = line.trim_prefix("--@type ")
 				match type:
 					"Key":
-						current_field.type = Type.with(func(string: String): return string in VALID_KEYS)
+						current_field.type = Type.with("Key", func(string: String): return string.trim_prefix("Key.") in VALID_KEYS)
 					"int":
-						current_field.type = Type.with(func(string: String): return string.is_valid_int())
+						current_field.type = Type.with("int", func(string: String): return string.is_valid_int())
 					"float":
-						current_field.type = Type.with(func(string: String): return string.is_valid_float())
+						current_field.type = Type.with("float", func(string: String): return string.is_valid_float())
 					"string":
-						current_field.type = Type.with(validate_string)
+						current_field.type = Type.with("string", validate_string)
 					_:
 						print("@ConfigParser: Unsupported type: %s [Line %s]" % [type, line_number])
 						return []
@@ -201,10 +206,8 @@ func parse(path: String) -> Array[ConfigField]:
 						print("@ConfigParser: Invalid default value: %s [Line %s]" % [current_field.default, line_number])
 						return []
 			
-			if '}' in line:
-				break
 			else:
-				regex.compile(r"^[ \t]*(?<name>[a-zA-Z_]\w*)[ \t]*=[ \t]*(?<value>.*?),?[ \t]*$")
+				regex.compile(r"^\s*(?<name>[a-zA-Z_]\w*)\s*=\s*(?<value>.*?),?\s*$")
 				re_match = regex.search(line)
 				if re_match:
 					var value = re_match.get_string("value")
@@ -212,31 +215,28 @@ func parse(path: String) -> Array[ConfigField]:
 						print("@ConfigParser: Invalid value: %s [Line %s]" % [value, line_number])
 						return []
 					current_field.name = re_match.get_string("name")
-					# TODO: Consider not dropping current_field
 					fields.append(current_field)
 					current_field = ConfigField.new()
 			
 			line_number += 1
+		
+		return fields
 	else:
 		var err = FileAccess.get_open_error()
 		print("Open config status: %s [%s]" % [error_string(err), err])
-		return []
-	return fields
-
-func test() -> void:
-	print(validate_list("		{'pizza got broken :(',	 'plz help'  }	 ", "string"))
+	return []
 
 func validate_list(string: String, type: String) -> bool:
 	var allowed_values_regex := ""
 	match type:
 		"string":
-			allowed_values_regex = "^('([^'\\\\]|\\\\.)*'|\"([^\"\\\\]|\\\\.)*\")$"
+			allowed_values_regex = "('([^'\\\\]|\\\\.)*'|\"([^\"\\\\]|\\\\.)*\")"
 		"ModifierKey":
-			allowed_values_regex = r"^ModifierKey\.(SHIFT|ALT|CONTROL)$"
+			allowed_values_regex = r"ModifierKey\.(SHIFT|ALT|CONTROL)"
 		"int":
-			allowed_values_regex = r"^\d+$"
+			allowed_values_regex = r"\d+"
 		"float":
-			allowed_values_regex = r"^\d+(\.\d+)?$"
+			allowed_values_regex = r"\d+(\.\d+)?"
 	assert(allowed_values_regex != "", "No RegEx provided for type %s at validate_list" % type)
 	var regex = RegEx.create_from_string(r"^\s*{\s*((%s\s*,\s*)*%s\s*(,\s*)?)?\s*}\s*$" % [allowed_values_regex, allowed_values_regex])
 	return regex.search(string) != null
