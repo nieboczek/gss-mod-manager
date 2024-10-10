@@ -132,7 +132,6 @@ func parse(path: String) -> Array[ConfigField]:
 					print("@ConfigParser: Doubled --@type [Line %s]" % line_number)
 					return []
 				
-				# i told you
 				regex.compile(r"(?!--@type)(?<type>int|float)( precision=(?<precision>\d+))?( range=(?<range_min>[+-]?\d+)\.\.(?<range_max>[+-]?\d+))?")
 				re_match = regex.search(line)
 				
@@ -146,14 +145,14 @@ func parse(path: String) -> Array[ConfigField]:
 							if precision != "":
 								print("@ConfigParser: Precision not allowed with int")
 								return []
-							current_field.type = Type.integer("int:range", validate_with_range_int, int(range_min), int(range_max))
+							current_field.type = Type.integer("int", validate_with_range_int, int(range_min), int(range_max))
 						else:
 							if precision == "":
-								current_field.type = Type.float_num("float:range", validate_with_range_float, float(range_min), float(range_max), 0, ArgEnum.FLOAT_RANGE)
+								current_field.type = Type.float_num("float", validate_with_range_float, float(range_min), float(range_max), 0, ArgEnum.FLOAT_RANGE)
 							elif range_min == "":
-								current_field.type = Type.float_num("float:precision", validate_with_precision_float, 0, 0, int(precision), ArgEnum.FLOAT_PRECISION)
+								current_field.type = Type.float_num("float", validate_with_precision_float, 0, 0, int(precision), ArgEnum.FLOAT_PRECISION)
 							else:
-								current_field.type = Type.float_num("float:range:precision", validate_with_range_precision_float, float(range_min), float(range_max), int(precision), ArgEnum.FLOAT_PRECISION_RANGE)
+								current_field.type = Type.float_num("float", validate_with_range_precision_float, float(range_min), float(range_max), int(precision), ArgEnum.FLOAT_PRECISION_RANGE)
 						
 						# Increment line_number, because we continue
 						line_number += 1
@@ -166,7 +165,7 @@ func parse(path: String) -> Array[ConfigField]:
 					var re_type = re_match.get_string("type")
 					regex.compile("^(int|float|string|ModifierKey)$")
 					if regex.search(re_type) != null:
-						current_field.type = Type.list("list;%s" % re_type, validate_list, re_type)
+						current_field.type = Type.list("list:%s" % re_type, validate_list, re_type)
 						# Increment line_number, because we continue
 						line_number += 1
 						continue
@@ -210,6 +209,16 @@ func parse(path: String) -> Array[ConfigField]:
 				regex.compile(r"^\s*(?<name>[a-zA-Z_]\w*)\s*=\s*(?<value>.*?),?\s*$")
 				re_match = regex.search(line)
 				if re_match:
+					if !current_field.description:
+						print("@ConfigParser: Missing @description declaration")
+						return []
+					if !current_field.type:
+						print("@ConfigParser: Missing @type declaration")
+						return []
+					if !current_field.default:
+						print("@ConfigParser: Missing @default declaration")
+						return []
+					
 					var value = re_match.get_string("value")
 					if !current_field.type.validate(value):
 						print("@ConfigParser: Invalid value: %s [Line %s]" % [value, line_number])

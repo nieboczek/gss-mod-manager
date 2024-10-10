@@ -7,17 +7,17 @@
 offset_right = 42.0
 offset_bottom = 34.0
 theme = ExtResource("1_1skrl")
-theme_override_constants/separation = -2
 script = ExtResource("1_2i062")
 
 [node name="OptionsContainer" type="HBoxContainer" parent="."]
 layout_mode = 2
+theme_override_constants/separation = 16
 
 [node name="FieldNameLabel" type="Label" parent="OptionsContainer"]
 layout_mode = 2
-text = "Key"
+text = "FieldNameLabel"
 
-[node name="Options" type="Control" parent="OptionsContainer"]
+[node name="Placeholder" type="Control" parent="OptionsContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -25,4 +25,4 @@ size_flags_horizontal = 3
 layout_mode = 2
 theme_override_colors/font_color = Color(0.712129, 0.712129, 0.712129, 1)
 theme_override_font_sizes/font_size = 16
-text = "this is a description"
+text = "DescriptionLabel"

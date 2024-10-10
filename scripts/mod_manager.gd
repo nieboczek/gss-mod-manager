@@ -2,8 +2,10 @@ class_name ModManager extends Control
 
 @onready var main = $MarginContainer/MainContainer
 @onready var file_dialog = $FileDialog
-@onready var config_panel = $ConfigPanel
-@onready var mod_manager_config_container = $ConfigPanel/MarginContainer/ModManagerConfigContainer
+@onready var config_panel = $PanelMarginContainer
+@onready var mod_manager_config_container = $PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ModManagerConfigContainer
+@onready var mod_config_container = $PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ScrollContainer/ModConfigContainer
+@onready var scroll_container = $PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ScrollContainer
 @onready var mod_containers: Control = main.get_node("MarginContainer/ScrollContainer/ModContainers")
 
 @onready var path_container: PathContainer = main.get_node("PathContainer")
@@ -79,13 +81,16 @@ func update_mod_list() -> void:
 	mod_list_container.set_count(non_builtin_mod_count)
 
 func _on_configure_button_pressed() -> void:
-	config_panel.visible = !config_panel.visible
-	mod_manager_config_container.visible = !mod_manager_config_container.visible
+	config_panel.show()
+	mod_manager_config_container.show()
 
 func _on_configure_mod(mod_name: String) -> void:
 	var fields = ConfigParser.parse("%s/Simulatorita/Binaries/Win64/Mods/%s/Scripts/config.lua" % [gss_path, mod_name])
 	for field in fields:
-		ConfigFieldContainer.with(field)
+		var container = ConfigFieldContainer.with(field)
+		mod_config_container.add_child(container)
+	config_panel.show()
+	scroll_container.show()
 
 func _on_delete_mod(mod_name: String) -> void:
 	if not error("Remove mod", Files.remove_mod(gss_path, mod_name)):
@@ -129,3 +134,14 @@ func os_error(action: String, err: int) -> bool:
 		print("%s exit code: FAILED [%s]" % [action, err])
 		return true
 	return false
+
+func _on_save_config_button_pressed() -> void:
+	print("SAVE BUTTON NOT IMPLEMENTED YET!!!")
+
+func _on_cancel_config_button_pressed() -> void:
+	config_panel.hide()
+	if scroll_container.visible:
+		scroll_container.hide()
+		for child in mod_config_container.get_children():
+			mod_config_container.remove_child(child)
+	mod_manager_config_container.hide()

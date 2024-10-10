@@ -1,10 +1,13 @@
-[gd_scene load_steps=6 format=3 uid="uid://c6570n2s1k1wv"]
+[gd_scene load_steps=7 format=3 uid="uid://c6570n2s1k1wv"]
 
 [ext_resource type="Theme" uid="uid://dged4041swr1" path="res://theme.tres" id="1_1wikn"]
 [ext_resource type="Script" path="res://scripts/mod_manager.gd" id="2_37t4h"]
 [ext_resource type="Script" path="res://scripts/path_container.gd" id="3_a8731"]
 [ext_resource type="Script" path="res://scripts/mod_loader_container.gd" id="4_vi72b"]
 [ext_resource type="Script" path="res://scripts/mod_list_container.gd" id="5_pbjar"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2jysh"]
+bg_color = Color(0.187176, 0.187176, 0.187176, 1)
 
 [node name="ModManager" type="Control"]
 layout_mode = 3
@@ -84,12 +87,11 @@ text = "Install mod"
 [node name="MarginContainer" type="MarginContainer" parent="MarginContainer/MainContainer"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/margin_left = 24
+theme_override_constants/margin_left = 16
 theme_override_constants/margin_top = 4
 
 [node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/MainContainer/MarginContainer"]
 layout_mode = 2
-size_flags_vertical = 3
 
 [node name="ModContainers" type="VBoxContainer" parent="MarginContainer/MainContainer/MarginContainer/ScrollContainer"]
 layout_mode = 2
@@ -105,39 +107,63 @@ text = "GSS Mod Manager v0.3.1"
 layout_mode = 2
 text = "Configure"
 
-[node name="ConfigPanel" type="Panel" parent="."]
+[node name="PanelMarginContainer" type="MarginContainer" parent="."]
 visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 40.0
-offset_top = 40.0
-offset_right = -40.0
-offset_bottom = -40.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 8
 
-[node name="MarginContainer" type="MarginContainer" parent="ConfigPanel"]
-layout_mode = 0
-offset_right = 10.0
-offset_bottom = 10.0
+[node name="PanelContainer" type="PanelContainer" parent="PanelMarginContainer"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_2jysh")
+
+[node name="MarginContainer" type="MarginContainer" parent="PanelMarginContainer/PanelContainer"]
+layout_mode = 2
 theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_bottom = 4
 
-[node name="ModManagerConfigContainer" type="VBoxContainer" parent="ConfigPanel/MarginContainer"]
-visible = false
+[node name="ConfigContainer" type="VBoxContainer" parent="PanelMarginContainer/PanelContainer/MarginContainer"]
 layout_mode = 2
 
-[node name="NoticeLabel" type="Label" parent="ConfigPanel/MarginContainer/ModManagerConfigContainer"]
+[node name="ModManagerConfigContainer" type="VBoxContainer" parent="PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="NoticeLabel" type="Label" parent="PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ModManagerConfigContainer"]
 layout_mode = 2
 text = "Nothing to configure here right now!
 
 TODO: Add configuration"
 
-[node name="ModConfigContainer" type="VBoxContainer" parent="ConfigPanel/MarginContainer"]
+[node name="ScrollContainer" type="ScrollContainer" parent="PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer"]
 visible = false
 layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ModConfigContainer" type="VBoxContainer" parent="PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ScrollContainer"]
+layout_mode = 2
+
+[node name="ConfigControls" type="HBoxContainer" parent="PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer"]
+layout_mode = 2
+
+[node name="SaveButton" type="Button" parent="PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ConfigControls"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 8
+text = "Save"
+
+[node name="CancelButton" type="Button" parent="PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ConfigControls"]
+layout_mode = 2
+text = "Cancel"
 
 [node name="FileDialog" type="FileDialog" parent="."]
 title = "Open a Directory"
@@ -155,5 +181,7 @@ use_native_dialog = true
 [connection signal="pressed" from="MarginContainer/MainContainer/ModListContainer/RefreshButton" to="MarginContainer/MainContainer/ModListContainer" method="_on_refresh_button_pressed"]
 [connection signal="pressed" from="MarginContainer/MainContainer/ModListContainer/InstallModButton" to="MarginContainer/MainContainer/ModListContainer" method="_on_install_mod_button_pressed"]
 [connection signal="pressed" from="MarginContainer/MainContainer/ModManagerContainer/ConfigureButton" to="." method="_on_configure_button_pressed"]
+[connection signal="pressed" from="PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ConfigControls/SaveButton" to="." method="_on_save_config_button_pressed"]
+[connection signal="pressed" from="PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ConfigControls/CancelButton" to="." method="_on_cancel_config_button_pressed"]
 [connection signal="dir_selected" from="FileDialog" to="." method="_on_file_dialog_gss_path_selected"]
 [connection signal="file_selected" from="FileDialog" to="MarginContainer/MainContainer/ModListContainer" method="_on_file_dialog_mod_selected"]
