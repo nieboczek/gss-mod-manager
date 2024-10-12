@@ -1,9 +1,9 @@
 class_name ConfigFieldContainer extends VBoxContainer
 
-signal write_value(config_field_name: String, value)
+signal write_value(config_field_name: String, value: String)
 
 var config_field: ConfigParser.ConfigField
-var last_valid_key_string: String = ""
+var last_valid_string: String = ""
 var child: Node
 
 const ArgEnum = ConfigParser.ArgEnum
@@ -15,43 +15,25 @@ static func with(cfg_field: ConfigParser.ConfigField) -> ConfigFieldContainer:
 	return cfg_field_container
 
 func post_set_config_field() -> void:
-	# TODO: Replace SpinBox with something that won't add 0000000001 at the end
 	match config_field.type.string_representation:
 		"string":
 			child = LineEdit.new()
 			child.text_submitted.connect(_text_submitted)
 		"int":
-			child = SpinBox.new()
-			child.value_changed.connect(_number_submitted)
-			if config_field.type.arg_enum == ArgEnum.INT_RANGE:
-				child.min_value = config_field.type.range_min_int
-				child.max_value = config_field.type.range_max_int
-			else:
-				child.allow_lesser = true
-				child.allow_greater = true
+			child = LineEdit.new()
+			child.text_submitted.connect(_int_submitted)
 		"float":
-			child = SpinBox.new()
-			child.value_changed.connect(_number_submitted)
-			
-			if config_field.type.arg_enum == ArgEnum.FLOAT_RANGE or config_field.type.arg_enum == ArgEnum.FLOAT_PRECISION_RANGE:
-				child.min_value = config_field.type.range_min_float
-				child.max_value = config_field.type.range_max_float
-			else:
-				child.allow_lesser = true
-				child.allow_greater = true
-			
-			if config_field.type.arg_enum == ArgEnum.FLOAT_PRECISION or config_field.type.arg_enum == ArgEnum.FLOAT_PRECISION_RANGE:
-				child.step = 0.1 ** config_field.type.precision
-			else:
-				child.step = 0
+			child = LineEdit.new()
+			child.text_submitted.connect(_float_submitted)
 		"Key":
 			# TODO: Use something user-friendlier
+			# TODO: So you can see the list of keys or something
 			child = LineEdit.new()
 			child.text_submitted.connect(_key_submitted)
-		"list:ModifierKey":
+		"list":
 			pass  # TODO: this
 		_:
-			print("Unsupported type for ConfigFieldContainer: %s" % config_field.type.string_representation)
+			print("Unsupported type for ConfigFieldContainer: ", config_field.type.string_representation)
 
 func _ready() -> void:
 	$OptionsContainer/FieldNameLabel.text = config_field.name.capitalize()
@@ -60,17 +42,47 @@ func _ready() -> void:
 		child.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		$OptionsContainer/Placeholder.replace_by(child)
 
-func _key_submitted(text: String):
+func _key_submitted(text: String) -> void:
 	if text in ConfigParser.VALID_KEYS:
-		last_valid_key_string = text
+		last_valid_string = text
+		write_value.emit(config_field.name, text)
 	else:
-		child.text = last_valid_key_string
+		child.text = last_valid_string
 
-func _number_submitted(number: float):
-	print('submitted number: ', number)
-	write_value.emit(config_field.name, number)
+func _int_submitted(text: String) -> void:
+	print("submitted int: (WIP)", text)
 
-func _text_submitted(text: String):
-	# TODO: Warn about bad escaping
-	print('submitted text: ', text)
-	write_value.emit(config_field.name, "\"%s\"" % text.c_unescape())
+func _float_submitted(text: String) -> void:
+	print("submitted float: ", text)
+	
+	var regex = RegEx.create_from_string(r"^\d+(\.(?<after_dot>\d+))?$").search(text)
+	if regex != null:
+		var after_dot = regex.get_string("after_dot")
+		
+		match config_field.type.arg_enum:
+			ArgEnum.FLOAT_PRECISION:
+				if len(after_dot) > config_field.type.precision:
+					child.text = last_valid_string
+					return
+			ArgEnum.FLOAT_PRECISION_RANGE:
+				var float_num = float(text)
+				if len(after_dot) > config_field.type.precision or \
+				   float_num > config_field.type.range_max_float or \
+				   float_num < config_field.type.range_min_float:
+					child.text = last_valid_string
+					return
+			ArgEnum.FLOAT_RANGE:
+				var float_num = float(text)
+				if float_num > config_field.type.range_max_float or \
+				   float_num < config_field.type.range_min_float:
+					child.text = last_valid_string
+					return
+		
+		last_valid_string = text
+		write_value.emit(config_field.name, text)
+	else:
+		child.text = last_valid_string
+
+func _text_submitted(text: String) -> void:
+	print("submitted text: ", text)
+	write_value.emit(config_field.name, "\"%s\"" % text)

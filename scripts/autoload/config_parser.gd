@@ -36,25 +36,25 @@ class Type:
 	var precision: int
 	var arg_enum: ArgEnum = ArgEnum.NONE
 	
-	static func list(as_string: String, validation_function: Callable, list_lua_type: String) -> Type:
+	static func list(validation_function: Callable, list_lua_type: String) -> Type:
 		var type = new()
-		type.string_representation = as_string
+		type.string_representation = "list"
 		type.validation_func = validation_function
 		type.list_type = list_lua_type
 		return type
 	
-	static func integer(as_string: String, validation_function: Callable, range_min: int, range_max: int) -> Type:
+	static func integer(validation_function: Callable, range_min: int, range_max: int) -> Type:
 		var type = new()
-		type.string_representation = as_string
+		type.string_representation = "int"
 		type.validation_func = validation_function
 		type.range_min_int = range_min
 		type.range_max_int = range_max
 		type.arg_enum = ArgEnum.INT_RANGE
 		return type
 	
-	static func float_num(as_string: String, validation_function: Callable, range_min: float, range_max: float, max_precision: int, argument_enum: ArgEnum) -> Type:
+	static func float_num(validation_function: Callable, range_min: float, range_max: float, max_precision: int, argument_enum: ArgEnum) -> Type:
 		var type = new()
-		type.string_representation = as_string
+		type.string_representation = "float"
 		type.validation_func = validation_function
 		type.range_min_float = range_min
 		type.range_max_float = range_max
@@ -145,14 +145,14 @@ func parse(path: String) -> Array[ConfigField]:
 							if precision != "":
 								print("@ConfigParser: Precision not allowed with int")
 								return []
-							current_field.type = Type.integer("int", validate_with_range_int, int(range_min), int(range_max))
+							current_field.type = Type.integer(validate_with_range_int, int(range_min), int(range_max))
 						else:
 							if precision == "":
-								current_field.type = Type.float_num("float", validate_with_range_float, float(range_min), float(range_max), 0, ArgEnum.FLOAT_RANGE)
+								current_field.type = Type.float_num(validate_with_range_float, float(range_min), float(range_max), 0, ArgEnum.FLOAT_RANGE)
 							elif range_min == "":
-								current_field.type = Type.float_num("float", validate_with_precision_float, 0, 0, int(precision), ArgEnum.FLOAT_PRECISION)
+								current_field.type = Type.float_num(validate_with_precision_float, 0, 0, int(precision), ArgEnum.FLOAT_PRECISION)
 							else:
-								current_field.type = Type.float_num("float", validate_with_range_precision_float, float(range_min), float(range_max), int(precision), ArgEnum.FLOAT_PRECISION_RANGE)
+								current_field.type = Type.float_num(validate_with_range_precision_float, float(range_min), float(range_max), int(precision), ArgEnum.FLOAT_PRECISION_RANGE)
 						
 						# Increment line_number, because we continue
 						line_number += 1
@@ -165,7 +165,7 @@ func parse(path: String) -> Array[ConfigField]:
 					var re_type = re_match.get_string("type")
 					regex.compile("^(int|float|string|ModifierKey)$")
 					if regex.search(re_type) != null:
-						current_field.type = Type.list("list:%s" % re_type, validate_list, re_type)
+						current_field.type = Type.list(validate_list, re_type)
 						# Increment line_number, because we continue
 						line_number += 1
 						continue
