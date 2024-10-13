@@ -72,7 +72,7 @@ func delete_mod(gss_path: String, mod_name: String) -> Error:
 		file = FileAccess.open("%s/Simulatorita/Binaries/Win64/Mods/mods.txt" % gss_path, FileAccess.WRITE)
 		if file:
 			for i in range(len(new_lines)):
-				file.store_string(lines[i])
+				file.store_string(new_lines[i])
 				if i < len(new_lines) - 1:
 					file.store_string("\n")
 			
