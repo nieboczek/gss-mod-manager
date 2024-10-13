@@ -10,7 +10,7 @@ Mod Manager for Grocery Store Simulator built using Godot.
 Fork the repository and apply changes.  
 After you're done making changes, you can make a pull request.
 
-To test you will need the latest release, unzip it and grab 7z.exe, 7z.dll, mod folder, UE4SS folder.
+To test you will need the latest release, unzip it and grab 7z.exe, 7z.dll and the UE4SS folder.
 Then put it into where you built your release.
 
 # Notes

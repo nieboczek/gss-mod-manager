@@ -99,7 +99,7 @@ layout_mode = 2
 
 [node name="ModManagerLabel" type="Label" parent="MarginContainer/MainContainer/ModManagerContainer"]
 layout_mode = 2
-text = "GSS Mod Manager v0.3.1"
+text = "GSS Mod Manager v0.3.2"
 
 [node name="ConfigureButton" type="Button" parent="MarginContainer/MainContainer/ModManagerContainer"]
 layout_mode = 2
