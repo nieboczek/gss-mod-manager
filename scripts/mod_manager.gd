@@ -2,7 +2,10 @@ class_name ModManager extends Control
 
 @onready var main = $MarginContainer/MainContainer
 @onready var file_dialog = $FileDialog
-@onready var config_panel = $ConfigPanel
+@onready var config_panel = $PanelMarginContainer
+@onready var mod_manager_config_container = $PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ModManagerConfigContainer
+@onready var mod_config_container = $PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ScrollContainer/ModConfigContainer
+@onready var scroll_container = $PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ScrollContainer
 @onready var mod_containers: Control = main.get_node("MarginContainer/ScrollContainer/ModContainers")
 
 @onready var path_container: PathContainer = main.get_node("PathContainer")
@@ -24,14 +27,10 @@ var gss_path: String:
 		path_container.post_path_change()
 		update_mod_list()
 var config: ConfigFile
-var config_editor_path: String
-var editor_thread := Thread.new()
 
-# NOTE: Only test in exported! (Unless you find a way to do it in the editor)
+# NOTE: Only test in exported!
 
-# TODO: Make editor for editing config configurable
-# ^^^^^ Better, alternative solution: Try to make a standard on how to write config.
-# ^^^^^ Then make the config editor built in (Topic to discuss)
+# TODO: Make config editor
 # TODO: Get icon
 
 ## Returns dictionary with the schema { mod_name (String): on (bool) }
@@ -71,6 +70,9 @@ func update_mod_list() -> void:
 		mod_containers.add_child(container)
 		
 		container.set_toggled(list[mod])
+		container.set_configurable(FileAccess.file_exists(
+			"%s/Simulatorita/Binaries/Win64/Mods/%s/Scripts/config.lua" % [gss_path, mod]
+		))
 		container.configure.connect(_on_configure_mod)
 		container.delete.connect(_on_delete_mod)
 		container.toggled.connect(_on_toggle_mod)
@@ -78,88 +80,27 @@ func update_mod_list() -> void:
 	
 	mod_list_container.set_count(non_builtin_mod_count)
 
-func run_config_editor() -> void:
-	var err = OS.execute("notepad", [config_editor_path])
-	os_error("Execute config editor", err)
+func _on_configure_button_pressed() -> void:
+	config_panel.show()
+	mod_manager_config_container.show()
 
 func _on_configure_mod(mod_name: String) -> void:
-	for file in DirAccess.get_files_at("%s/Simulatorita/Binaries/Win64/Mods/%s/Scripts" % [gss_path, mod_name]):
-		if file.begins_with("config"):
-			config_editor_path = "%s/Simulatorita/Binaries/Win64/Mods/%s/Scripts/%s" % [gss_path, mod_name, file]
-			var err = editor_thread.start(run_config_editor, Thread.PRIORITY_LOW)
-			error("Execute notepad in thread", err)
-			return
+	var fields = ConfigParser.parse("%s/Simulatorita/Binaries/Win64/Mods/%s/Scripts/config.lua" % [gss_path, mod_name])
+	for field in fields:
+		var container = ConfigFieldContainer.with(field)
+		mod_config_container.add_child(container)
+	config_panel.show()
+	scroll_container.show()
 
 func _on_delete_mod(mod_name: String) -> void:
-	Files.remove_recursive("%s/Simulatorita/Binaries/Win64/Mods/%s" % [gss_path, mod_name])
-	var file = FileAccess.open("%s/Simulatorita/Binaries/Win64/Mods/mods.txt" % gss_path, FileAccess.READ)
-	if file:
-		var lines = []
-		while not file.eof_reached():
-			lines.append(file.get_line())
-		file.close()
-		
-		var new_lines = []
-		for line in lines:
-			if not line.begins_with(mod_name + " : "):
-				new_lines.append(line)
-		
-		file = FileAccess.open("%s/Simulatorita/Binaries/Win64/Mods/mods.txt" % gss_path, FileAccess.WRITE)
-		if file:
-			for i in range(len(new_lines)):
-				file.store_string(new_lines[i])
-				if i < len(new_lines) - 1:
-					file.store_string("\n")
-			
-			file.close()
-			update_mod_list()
-			print("Mod deleted successfully")
-		else:
-			var err = FileAccess.get_open_error()
-			error("Open mods.txt file", err)
-	else:
-		var err = FileAccess.get_open_error()
-		error("Open mods.txt file", err)
-
-func _on_configure_button_pressed() -> void:
-	config_panel.visible = !config_panel.visible
+	if not error("Remove mod", Files.remove_mod(gss_path, mod_name)):
+		update_mod_list()
 
 func _on_toggle_mod(mod_name: String, on: bool) -> void:
-	var file = FileAccess.open("%s/Simulatorita/Binaries/Win64/Mods/mods.txt" % gss_path, FileAccess.READ)
-	if file:
-		var lines = []
-		while not file.eof_reached():
-			lines.append(file.get_line())
-		file.close()
-		
-		for i in range(len(lines)):
-			if lines[i].begins_with(mod_name + " : "):
-				var new_value = '1' if on else '0'
-				lines[i] = mod_name + " : " + new_value
-				break
-		
-		file = FileAccess.open("%s/Simulatorita/Binaries/Win64/Mods/mods.txt" % gss_path, FileAccess.WRITE)
-		if file:
-			for i in range(len(lines)):
-				file.store_string(lines[i])
-				if i < len(lines) - 1:
-					file.store_string("\n")
-			
-			file.close()
-			print("Mod toggled succesfully")
-		else:
-			var err = FileAccess.get_open_error()
-			error("Opening mods.txt file", err)
-	else:
-		var err = FileAccess.get_open_error()
-		error("Opening mods.txt file", err)
+	error("Toggle mod", Files.toggle_mod(gss_path, mod_name, on))
 
 func _on_file_dialog_gss_path_selected(dir: String) -> void:
 	gss_path = dir
-
-func _process(_delta: float) -> void:
-	if editor_thread.is_started() and !editor_thread.is_alive():
-		editor_thread.wait_to_finish()
 
 func _ready() -> void:
 	# Set self as the ModManager in containers
@@ -181,7 +122,7 @@ func _ready() -> void:
 		gss_path = path
 
 ## Returns a boolean that if is true, action didn't complete successfully
-func error(action: String, err: int) -> bool:
+func error(action: String, err: Error) -> bool:
 	if err:
 		print("%s status: %s [%s]" % [action, error_string(err), err])
 		return true
@@ -193,3 +134,14 @@ func os_error(action: String, err: int) -> bool:
 		print("%s exit code: FAILED [%s]" % [action, err])
 		return true
 	return false
+
+func _on_save_config_button_pressed() -> void:
+	print("SAVE BUTTON NOT IMPLEMENTED YET!!!")
+
+func _on_cancel_config_button_pressed() -> void:
+	config_panel.hide()
+	if scroll_container.visible:
+		scroll_container.hide()
+		for child in mod_config_container.get_children():
+			mod_config_container.remove_child(child)
+	mod_manager_config_container.hide()
