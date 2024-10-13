@@ -83,6 +83,7 @@ func update_mod_list() -> void:
 func _on_configure_button_pressed() -> void:
 	config_panel.show()
 	mod_manager_config_container.show()
+	main.hide()
 
 func _on_configure_mod(mod_name: String) -> void:
 	var fields = ConfigParser.parse("%s/Simulatorita/Binaries/Win64/Mods/%s/Scripts/config.lua" % [gss_path, mod_name])
@@ -91,6 +92,7 @@ func _on_configure_mod(mod_name: String) -> void:
 		mod_config_container.add_child(container)
 	config_panel.show()
 	scroll_container.show()
+	main.hide()
 
 func _on_delete_mod(mod_name: String) -> void:
 	if not error("Remove mod", Files.remove_mod(gss_path, mod_name)):
@@ -139,6 +141,7 @@ func _on_save_config_button_pressed() -> void:
 	print("SAVE BUTTON NOT IMPLEMENTED YET!!!")
 
 func _on_cancel_config_button_pressed() -> void:
+	main.show()
 	config_panel.hide()
 	if scroll_container.visible:
 		scroll_container.hide()

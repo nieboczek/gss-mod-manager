@@ -61,7 +61,7 @@ Floats can have a max precision
 	...
 ```
 
-Enums will be coming soon!
+Enums (just a list of strings, and the user has to select one) will be coming soon!
 
 If you have any questions ask them on the [GSS Modding Community Discord server](https://discord.gg/5ENg4XGpPZ) or [in GitHub issues](https://github.com/nieboczek/gss-mod-manager)
 

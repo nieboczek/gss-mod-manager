@@ -101,7 +101,7 @@ layout_mode = 2
 
 [node name="ModManagerLabel" type="Label" parent="MarginContainer/MainContainer/ModManagerContainer"]
 layout_mode = 2
-text = "GSS Mod Manager v0.3.1"
+text = "GSS Mod Manager v0.4.0"
 
 [node name="ConfigureButton" type="Button" parent="MarginContainer/MainContainer/ModManagerContainer"]
 layout_mode = 2
@@ -128,6 +128,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_2jysh")
 layout_mode = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 4
 
 [node name="ConfigContainer" type="VBoxContainer" parent="PanelMarginContainer/PanelContainer/MarginContainer"]
@@ -151,6 +152,7 @@ size_flags_vertical = 3
 
 [node name="ModConfigContainer" type="VBoxContainer" parent="PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ScrollContainer"]
 layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="ConfigControls" type="HBoxContainer" parent="PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer"]
 layout_mode = 2

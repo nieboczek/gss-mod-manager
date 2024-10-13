@@ -85,17 +85,8 @@ class ConfigField:
 	var name: String
 	var description: String
 	var type: Type
+	var value: String
 	var default: String
-	static func with(desc: String, field_type: Type, field_default: String) -> ConfigField:
-		var config_field = new()
-		config_field.description = desc
-		config_field.type = field_type
-		config_field.default = field_default
-		return config_field
-	
-	func _to_string() -> String:
-		return "ConfigField(%s)" % name
-
 
 func parse(path: String) -> Array[ConfigField]:
 	# CAUTION: Welcome to RegEx hell! Please consider using https://regexr.com/
@@ -210,13 +201,13 @@ func parse(path: String) -> Array[ConfigField]:
 				re_match = regex.search(line)
 				if re_match:
 					if !current_field.description:
-						print("@ConfigParser: Missing @description declaration")
+						print("@ConfigParser: Missing @description declaration [Line %s]" % line_number)
 						return []
 					if !current_field.type:
-						print("@ConfigParser: Missing @type declaration")
+						print("@ConfigParser: Missing @type declaration [Line %s]" % line_number)
 						return []
 					if !current_field.default:
-						print("@ConfigParser: Missing @default declaration")
+						print("@ConfigParser: Missing @default declaration [Line %s]" % line_number)
 						return []
 					
 					var value = re_match.get_string("value")
@@ -224,6 +215,7 @@ func parse(path: String) -> Array[ConfigField]:
 						print("@ConfigParser: Invalid value: %s [Line %s]" % [value, line_number])
 						return []
 					current_field.name = re_match.get_string("name")
+					current_field.value = value
 					fields.append(current_field)
 					current_field = ConfigField.new()
 			
