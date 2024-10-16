@@ -8,17 +8,17 @@ var mm: ModManager
 
 func _on_mod_loader_install_button_pressed() -> void:
 	if is_installed:
-		Files.remove_recursive("%s/Simulatorita/Binaries/Win64/Mods" % mm.gss_path)
-		DirAccess.remove_absolute("%s/Simulatorita/Binaries/Win64/UE4SS.dll" % mm.gss_path)
-		DirAccess.remove_absolute("%s/Simulatorita/Binaries/Win64/UE4SS-settings.ini" % mm.gss_path)
-		DirAccess.remove_absolute("%s/Simulatorita/Binaries/Win64/dwmapi.dll" % mm.gss_path)
+		Files.remove_recursive(mm.ue_root + "/Mods")
+		DirAccess.remove_absolute(mm.ue_root + "/UE4SS.dll")
+		DirAccess.remove_absolute(mm.ue_root + "/UE4SS-settings.ini")
+		DirAccess.remove_absolute(mm.ue_root + "/dwmapi.dll")
 	else:
-		Files.copy_recursive("%s/UE4SS" % mm.root_path, "%s/Simulatorita/Binaries/Win64" % mm.gss_path)
+		Files.copy_recursive(mm.exe_path + "/UE4SS", mm.ue_root)
 	set_installed(!is_installed)
 	mm.update_mod_list()
 
 func check_installed() -> void:
-	var installed = FileAccess.file_exists("%s/Simulatorita/Binaries/Win64/UE4SS.dll" % mm.gss_path)
+	var installed = FileAccess.file_exists(mm.ue_root + "/UE4SS.dll")
 	set_installed(installed)
 
 func set_install_disabled(disabled: bool) -> void:

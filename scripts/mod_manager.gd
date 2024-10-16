@@ -15,10 +15,15 @@ const BUILTIN_MODS: Array[String] = [
 	"jsbLuaProfilerMod", "Keybinds", "LineTraceMod", "SplitScreenMod"
 ]
 
-var root_path := OS.get_executable_path().get_base_dir()
+var exe_path := OS.get_executable_path().get_base_dir()
+var ue_root: String
 var gss_path: String:
 	set(value):
 		gss_path = value
+		if FileAccess.file_exists(gss_path + "/Simulatorita/Binaries/Win64/ue4ss"):
+			ue_root = gss_path + "Simulatorita/Binaries/Win64/ue4ss"
+		else:
+			ue_root = gss_path + "Simulatorita/Binaries/Win64"
 		config.set_value("main", "gss_path", gss_path)
 		config.save("user://config")
 		path_container.post_path_change()
@@ -37,7 +42,7 @@ var editor_thread := Thread.new()
 ## Returns dictionary with the schema { mod_name (String): on (bool) }
 func get_mod_list() -> Dictionary:
 	var enabled: Dictionary = {}
-	var file = FileAccess.open("%s/Simulatorita/Binaries/Win64/Mods/mods.txt" % gss_path, FileAccess.READ)
+	var file = FileAccess.open(ue_root + "/Mods/mods.txt", FileAccess.READ)
 	if file:
 		var lines = file.get_as_text(true).split('\n')
 		for line in lines:
@@ -83,16 +88,16 @@ func run_config_editor() -> void:
 	os_error("Execute config editor", err)
 
 func _on_configure_mod(mod_name: String) -> void:
-	for file in DirAccess.get_files_at("%s/Simulatorita/Binaries/Win64/Mods/%s/Scripts" % [gss_path, mod_name]):
+	for file in DirAccess.get_files_at(ue_root + "/Mods/%s/Scripts" % mod_name):
 		if file.begins_with("config"):
-			config_editor_path = "%s/Simulatorita/Binaries/Win64/Mods/%s/Scripts/%s" % [gss_path, mod_name, file]
+			config_editor_path = ue_root + "/Mods/%s/Scripts/%s" % [mod_name, file]
 			var err = editor_thread.start(run_config_editor, Thread.PRIORITY_LOW)
 			error("Execute notepad in thread", err)
 			return
 
 func _on_delete_mod(mod_name: String) -> void:
-	Files.remove_recursive("%s/Simulatorita/Binaries/Win64/Mods/%s" % [gss_path, mod_name])
-	var file = FileAccess.open("%s/Simulatorita/Binaries/Win64/Mods/mods.txt" % gss_path, FileAccess.READ)
+	Files.remove_recursive(ue_root + "/Mods/%s" % mod_name)
+	var file = FileAccess.open(ue_root + "/Mods/mods.txt", FileAccess.READ)
 	if file:
 		var lines = []
 		while not file.eof_reached():
@@ -104,7 +109,7 @@ func _on_delete_mod(mod_name: String) -> void:
 			if not line.begins_with(mod_name + " : "):
 				new_lines.append(line)
 		
-		file = FileAccess.open("%s/Simulatorita/Binaries/Win64/Mods/mods.txt" % gss_path, FileAccess.WRITE)
+		file = FileAccess.open(ue_root + "/Mods/mods.txt", FileAccess.WRITE)
 		if file:
 			for i in range(len(new_lines)):
 				file.store_string(new_lines[i])
@@ -125,7 +130,7 @@ func _on_configure_button_pressed() -> void:
 	config_panel.visible = !config_panel.visible
 
 func _on_toggle_mod(mod_name: String, on: bool) -> void:
-	var file = FileAccess.open("%s/Simulatorita/Binaries/Win64/Mods/mods.txt" % gss_path, FileAccess.READ)
+	var file = FileAccess.open(ue_root + "/Mods/mods.txt", FileAccess.READ)
 	if file:
 		var lines = []
 		while not file.eof_reached():
@@ -138,7 +143,7 @@ func _on_toggle_mod(mod_name: String, on: bool) -> void:
 				lines[i] = mod_name + " : " + new_value
 				break
 		
-		file = FileAccess.open("%s/Simulatorita/Binaries/Win64/Mods/mods.txt" % gss_path, FileAccess.WRITE)
+		file = FileAccess.open(ue_root + "/Mods/mods.txt", FileAccess.WRITE)
 		if file:
 			for i in range(len(lines)):
 				file.store_string(lines[i])

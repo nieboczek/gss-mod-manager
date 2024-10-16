@@ -20,21 +20,20 @@ func set_count(count: int) -> void:
 	mod_list_label.text = "Mod list [%s]" % count
 
 func _on_file_dialog_mod_selected(path: String) -> void:
-	var mods := DirAccess.get_directories_at("%s/Simulatorita/Binaries/Win64/Mods" % mm.gss_path)
+	var mods := DirAccess.get_directories_at(mm.ue_root + "/Mods")
 	
-	# Use 7z to unzip the archive and copy it to GSS
-	var mods_arg = "-o%s/Simulatorita/Binaries/Win64/Mods" % mm.gss_path
-	var err = OS.execute("%s/7z.exe" % mm.root_path, ["x", path, "-y", mods_arg])
+	# Use 7z to unzip the archive and copy it to Mods folder
+	var err = OS.execute("%s/7z.exe" % mm.exe_path, ["x", path, "-y", "-o%s/Mods" % mm.ue_root])
 	if mm.os_error("Execute 7z", err): return
 	
 	var mod_name: String
-	var new_mods := DirAccess.get_directories_at("%s/Simulatorita/Binaries/Win64/Mods" % mm.gss_path)
+	var new_mods := DirAccess.get_directories_at(mm.ue_root + "/Mods")
 	for mod in new_mods:
 		if mod not in mods:
 			mod_name = mod
 	
 	# Add "mod_name : 1" to mods.txt
-	var file = FileAccess.open("%s/Simulatorita/Binaries/Win64/Mods/mods.txt" % mm.gss_path, FileAccess.READ)
+	var file = FileAccess.open(mm.ue_root + "/Mods/mods.txt", FileAccess.READ)
 	if file:
 		var lines = []
 		while not file.eof_reached():
@@ -42,7 +41,7 @@ func _on_file_dialog_mod_selected(path: String) -> void:
 		file.close()
 		lines.append(mod_name + " : 1")
 		
-		file = FileAccess.open("%s/Simulatorita/Binaries/Win64/Mods/mods.txt" % mm.gss_path, FileAccess.WRITE)
+		file = FileAccess.open(mm.ue_root + "/Mods/mods.txt", FileAccess.WRITE)
 		if file:
 			for i in range(len(lines)):
 				file.store_string(lines[i])

@@ -20,19 +20,19 @@ func detect_gss() -> void:
 	for idx in range(DirAccess.get_drive_count()):
 		var drive_name = DirAccess.get_drive_name(idx)
 		if drive_name == "C:": continue
-		drive_paths.append("%s/SteamLibrary/steamapps/common" % drive_name)
+		drive_paths.append(drive_name + "/SteamLibrary/steamapps/common")
 	
 	for drive_path in drive_paths:
 		if "Grocery Store Simulator" in DirAccess.get_directories_at(drive_path):
-			print("Found Grocery Store Simulator at %s" % drive_path)
-			mm.gss_path = "%s/Grocery Store Simulator" % drive_path
+			print("Found Grocery Store Simulator at ", drive_path)
+			mm.gss_path = drive_path + "/Grocery Store Simulator"
 			post_path_change()
 			return
 	print("Didn't find Grocery Store Simulator in Steam directories")
 
 func post_path_change() -> void:
-	path_label.text = "GSS Path: %s" % mm.gss_path
-	valid_path = FileAccess.file_exists("%s/Simulatorita.exe" % mm.gss_path)
+	path_label.text = "GSS Path: " + mm.gss_path
+	valid_path = FileAccess.file_exists(mm.gss_path + "/Simulatorita.exe")
 	set_valid()
 	mm.mod_loader_container.check_installed()
 
