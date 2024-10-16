@@ -18,10 +18,15 @@ const BUILTIN_MODS: Array[String] = [
 	"jsbLuaProfilerMod", "Keybinds", "LineTraceMod", "SplitScreenMod"
 ]
 
-var root_path := OS.get_executable_path().get_base_dir()
+var exe_path := OS.get_executable_path().get_base_dir()
+var ue_root: String
 var gss_path: String:
 	set(value):
 		gss_path = value
+		if FileAccess.file_exists(gss_path + "/Simulatorita/Binaries/Win64/ue4ss"):
+			ue_root = gss_path + "Simulatorita/Binaries/Win64/ue4ss"
+		else:
+			ue_root = gss_path + "Simulatorita/Binaries/Win64"
 		config.set_value("main", "gss_path", gss_path)
 		config.save("user://config")
 		path_container.post_path_change()
@@ -36,7 +41,7 @@ var config: ConfigFile
 ## Returns dictionary with the schema { mod_name (String): on (bool) }
 func get_mod_list() -> Dictionary:
 	var enabled: Dictionary = {}
-	var file = FileAccess.open("%s/Simulatorita/Binaries/Win64/Mods/mods.txt" % gss_path, FileAccess.READ)
+	var file = FileAccess.open(ue_root + "/Mods/mods.txt", FileAccess.READ)
 	if file:
 		var lines = file.get_as_text(true).split('\n')
 		for line in lines:
@@ -71,7 +76,7 @@ func update_mod_list() -> void:
 		
 		container.set_toggled(list[mod])
 		container.set_configurable(FileAccess.file_exists(
-			"%s/Simulatorita/Binaries/Win64/Mods/%s/Scripts/config.lua" % [gss_path, mod]
+			ue_root + "/Mods/%s/Scripts/config.lua" % mod
 		))
 		container.configure.connect(_on_configure_mod)
 		container.delete.connect(_on_delete_mod)
@@ -86,7 +91,7 @@ func _on_configure_button_pressed() -> void:
 	main.hide()
 
 func _on_configure_mod(mod_name: String) -> void:
-	var fields = ConfigParser.parse("%s/Simulatorita/Binaries/Win64/Mods/%s/Scripts/config.lua" % [gss_path, mod_name])
+	var fields = ConfigParser.parse(ue_root + "/Mods/%s/Scripts/config.lua" % mod_name)
 	for field in fields:
 		var container = ConfigFieldContainer.with(field)
 		container.write_value.connect(
@@ -98,11 +103,11 @@ func _on_configure_mod(mod_name: String) -> void:
 	main.hide()
 
 func _on_delete_mod(mod_name: String) -> void:
-	if not error("Remove mod", Files.remove_mod(gss_path, mod_name)):
+	if not error("Remove mod", Files.remove_mod(ue_root, mod_name)):
 		update_mod_list()
 
 func _on_toggle_mod(mod_name: String, on: bool) -> void:
-	error("Toggle mod", Files.toggle_mod(gss_path, mod_name, on))
+	error("Toggle mod", Files.toggle_mod(ue_root, mod_name, on))
 
 func _on_file_dialog_gss_path_selected(dir: String) -> void:
 	gss_path = dir
