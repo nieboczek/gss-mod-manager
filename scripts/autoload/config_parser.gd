@@ -97,23 +97,27 @@ func parse(path: String) -> Array[ConfigField]:
 		var text = file.get_as_text(true)
 		var lines := text.split('\n')
 		
-		regex.compile(r"^\s*(local )?[a-zA-Z_]\w* ?= ?{\s*(?!.)$")
-		var re_match = regex.search(lines[0])
-		
-		if !re_match.get_string():
-			print("@ConfigParser: Expected first line to start the variable assignment")
+		if lines[0] != "local config = {":
+			print("@ConfigParser: Expected first line to be \"local config = {\"")
 			return []
-		
 		lines.remove_at(0)
 		
+		if lines[-2] != "}":
+			print("@ConfigParser: Expected second last line to be \"}\"")
+			return []
+		
+		if lines[-1] != "return config":
+			print("@ConfigParser: Expected last line to be \"return config\"")
+			return []
+		
 		var current_field := ConfigField.new()
-		var line_number := 2
+		var line_number := 2  # Line 1 was removed before
 		
 		for line in lines:
 			line = line.lstrip(" \t").rstrip(" \t")
 			if line.begins_with("--@description "):
 				if current_field.description:
-					current_field.description += "\n%s" % line.trim_prefix("--@description ")
+					current_field.description += '\n' + line.trim_prefix("--@description ")
 				else:
 					current_field.description = line.trim_prefix("--@description ")
 			
@@ -123,24 +127,31 @@ func parse(path: String) -> Array[ConfigField]:
 					print("@ConfigParser: Doubled --@type [Line %s]" % line_number)
 					return []
 				
-				regex.compile(r"(?!--@type)(?<type>int|float)( precision=(?<precision>\d+))?( range=(?<range_min>[+-]?\d+)\.\.(?<range_max>[+-]?\d+))?")
-				re_match = regex.search(line)
+				regex.compile(r"--@type(?<type>int|float)( precision=(?<precision>\d+))?( range=(?<range_min>[+-]?\d+)\.\.(?<range_max>[+-]?\d+))?( precision=(?<precision2>\d+))?")
+				var re_match = regex.search(line)
 				
 				if re_match:
 					var range_min = re_match.get_string("range_min")
 					var range_max = re_match.get_string("range_max")
 					var precision = re_match.get_string("precision")
-					var has_precision_or_range = not range_min.is_empty() or not precision.is_empty()
+					var precision2 = re_match.get_string("precision2")
+					var has_precision_or_range = range_min or precision or precision2
 					if has_precision_or_range:
+						if precision and precision2:
+							print("@ConfigParser: Doubled precision parameter [Line %s]" % line_number)
+							return []
+						if precision2 and precision.is_empty():
+							precision = precision2
+						
 						if re_match.get_string("type") == "int":
-							if precision != "":
-								print("@ConfigParser: Precision not allowed with int")
+							if precision or precision2:
+								print("@ConfigParser: Precision not allowed with int [Line %s]" % line_number)
 								return []
 							current_field.type = Type.integer(validate_with_range_int, int(range_min), int(range_max))
 						else:
-							if precision == "":
+							if precision.is_empty():
 								current_field.type = Type.float_num(validate_with_range_float, float(range_min), float(range_max), 0, ArgEnum.FLOAT_RANGE)
-							elif range_min == "":
+							elif range_min.is_empty():
 								current_field.type = Type.float_num(validate_with_precision_float, 0, 0, int(precision), ArgEnum.FLOAT_PRECISION)
 							else:
 								current_field.type = Type.float_num(validate_with_range_precision_float, float(range_min), float(range_max), int(precision), ArgEnum.FLOAT_PRECISION_RANGE)
@@ -149,7 +160,7 @@ func parse(path: String) -> Array[ConfigField]:
 						line_number += 1
 						continue
 				
-				regex.compile(r"(?!--@type) list\[(?<type>.+)\]")
+				regex.compile(r"--@type list\[(?<type>.+)\]")
 				re_match = regex.search(line)
 				
 				if re_match:
@@ -198,7 +209,7 @@ func parse(path: String) -> Array[ConfigField]:
 			
 			else:
 				regex.compile(r"^\s*(?<name>[a-zA-Z_]\w*)\s*=\s*(?<value>.*?),?\s*$")
-				re_match = regex.search(line)
+				var re_match = regex.search(line)
 				if re_match:
 					if !current_field.description:
 						print("@ConfigParser: Missing @description declaration [Line %s]" % line_number)

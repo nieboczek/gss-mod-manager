@@ -133,7 +133,11 @@ func post_set_config_field() -> void:
 			child = Button.new()
 			child.pressed.connect(_key_button_pressed)
 		"list":
-			pass  # TODO: this
+			if config_field.type.list_type == "ModifierKey":
+				child = ModifierKeySelect.with(config_field.value)
+				child.modifier_keys_selected.connect(_on_modifier_keys_selected)
+			else:
+				print("Lists are currently not supported for type: ", config_field.type.list_type)
 		_:
 			print("Unsupported type for ConfigFieldContainer: ", config_field.type.string_representation)
 
@@ -156,12 +160,15 @@ func _ready() -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed:
 		var ue = to_ue(event.keycode)
-		print("UE:",ue)
 		if ue.is_empty():
 			child.text = "No key code found for pressed key. Waiting for key press..."
 		else:
 			child.text = ue + " (Press to set key)"
 			set_process_input(false)
+			write_value.emit(config_field.name, "Key." + ue)
+
+func _on_modifier_keys_selected(list: String) -> void:
+	write_value.emit(config_field.name, list)
 
 func _key_button_pressed() -> void:
 	child.text = "Waiting for key press..."

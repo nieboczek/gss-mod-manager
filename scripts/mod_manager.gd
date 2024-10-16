@@ -26,11 +26,11 @@ var gss_path: String:
 		config.save("user://config")
 		path_container.post_path_change()
 		update_mod_list()
+var config_changes: Dictionary = {}
 var config: ConfigFile
 
-# NOTE: Only test in exported!
+# NOTE: Things like installing the mod loader and installing mods only work in exported.
 
-# TODO: Make config editor
 # TODO: Get icon
 
 ## Returns dictionary with the schema { mod_name (String): on (bool) }
@@ -89,6 +89,9 @@ func _on_configure_mod(mod_name: String) -> void:
 	var fields = ConfigParser.parse("%s/Simulatorita/Binaries/Win64/Mods/%s/Scripts/config.lua" % [gss_path, mod_name])
 	for field in fields:
 		var container = ConfigFieldContainer.with(field)
+		container.write_value.connect(
+			func(field_name: String, value: String): config_changes[field_name] = value
+		)
 		mod_config_container.add_child(container)
 	config_panel.show()
 	scroll_container.show()
@@ -138,7 +141,9 @@ func os_error(action: String, err: int) -> bool:
 	return false
 
 func _on_save_config_button_pressed() -> void:
-	print("SAVE BUTTON NOT IMPLEMENTED YET!!!")
+	print("Save button not fully implemented yet!")
+	for field_name in config_changes:
+		var value = config_changes[field_name]
 
 func _on_cancel_config_button_pressed() -> void:
 	main.show()
