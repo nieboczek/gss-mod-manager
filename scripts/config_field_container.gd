@@ -99,7 +99,7 @@ func to_ue(key) -> String:
 		KEY_PERIOD: return "OEM_PERIOD"
 		KEY_INSERT: return "INS"
 		KEY_DELETE: return "DEL"
-		KEY_PRINT: return "PRINT"
+		KEY_PRINT: return "PRINT_SCREEN"
 		KEY_HOMEPAGE: return "BROWSER_HOME"
 		KEY_LAUNCH0: return "LAUNCH_APP1"
 		KEY_LAUNCH1: return "LAUNCH_APP2"
@@ -110,7 +110,6 @@ func to_ue(key) -> String:
 		_:
 			# Handle single-letter key codes
 			var string = OS.get_keycode_string(key)
-			print(string)
 			if string.length() == 1:
 				return string
 			return ""
@@ -140,22 +139,22 @@ func post_set_config_field() -> void:
 				print("Lists are currently not supported for type: ", config_field.type.list_type)
 		_:
 			print("Unsupported type for ConfigFieldContainer: ", config_field.type.string_representation)
+	
+	if child is LineEdit:
+		if config_field.type.string_representation == "string":
+			child.text = config_field.value.left(-1).right(-1)
+		else:
+			child.text = config_field.value
+			last_valid_string = child.text
+	elif child is Button:
+		child.text = config_field.value.replace("Key.", "") + " (Press to set key)"
+	child.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 func _ready() -> void:
 	set_process_input(false)
 	$OptionsContainer/FieldNameLabel.text = config_field.name.capitalize()
 	$DescriptionLabel.text = config_field.description
-	if child:
-		if child is LineEdit:
-			if config_field.type.string_representation == "string":
-				child.text = config_field.value.left(-1).right(-1)
-			else:
-				child.text = config_field.value
-		elif child is Button:
-			child.text = config_field.value.replace("Key.", "") + " (Press to set key)"
-		
-		child.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		$OptionsContainer/Placeholder.replace_by(child)
+	$OptionsContainer/Placeholder.replace_by(child)
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed:
@@ -180,6 +179,7 @@ func _int_submitted(text: String) -> void:
 	else:
 		child.text = text
 		last_valid_string = text
+		write_value.emit(config_field.name, text)
 
 func _float_submitted(text: String) -> void:
 	var regex = RegEx.create_from_string(r"^\d+(\.(?<after_dot>\d+))?$").search(text)
@@ -212,3 +212,16 @@ func _float_submitted(text: String) -> void:
 
 func _text_submitted(text: String) -> void:
 	write_value.emit(config_field.name, "\"%s\"" % text.c_escape())
+
+func _on_reset_to_default_button_pressed() -> void:
+	if child is LineEdit:
+		if config_field.type.string_representation == "string":
+			child.text = config_field.default.left(-1).right(-1)
+		else:
+			child.text = config_field.default
+		last_valid_string = child.text
+	elif child is Button:
+		child.text = config_field.default.replace("Key.", "") + " (Press to set key)"
+	elif child is ModifierKeySelect:
+		child.change_value(config_field.default)
+	write_value.emit(config_field.name, config_field.default)

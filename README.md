@@ -22,11 +22,6 @@ Your config should start with
 ```lua
 local config = {
 ```
-and end with
-```lua
-}
-return config
-```
 
 ## Annotations
 Each field in the config object **MUST** have the following annotations

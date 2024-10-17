@@ -8,22 +8,23 @@ var alt_toggled: bool
 
 static func with(value: String) -> ModifierKeySelect:
 	var select = preload("res://scenes/modifier_key_select.tscn").instantiate()
+	select.change_value(value)
+	return select
+
+func change_value(value: String) -> void:
 	var keys = value.replace('{', "").replace('}', "").split(',')
-	
 	for key in keys:
 		key = key.strip_edges()
 		match key:
 			"ModifierKey.CONTROL":
-				select.control_toggled = true
-				select.get_node("ControlCheck").button_pressed = true
+				control_toggled = true
+				$ControlCheck.button_pressed = true
 			"ModifierKey.SHIFT":
-				select.shift_toggled = true
-				select.get_node("ShiftCheck").button_pressed = true
+				shift_toggled = true
+				$ShiftCheck.button_pressed = true
 			"ModifierKey.ALT":
-				select.alt_toggled = true
-				select.get_node("AltCheck").button_pressed = true
-	
-	return select
+				alt_toggled = true
+				$AltCheck.button_pressed = true
 
 func emit() -> void:
 	var selected_keys: PackedStringArray = []

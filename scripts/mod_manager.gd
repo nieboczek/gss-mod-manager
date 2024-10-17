@@ -6,6 +6,7 @@ class_name ModManager extends Control
 @onready var mod_manager_config_container = $PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ModManagerConfigContainer
 @onready var mod_config_container = $PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ScrollContainer/ModConfigContainer
 @onready var scroll_container = $PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ScrollContainer
+@onready var copy_log_button = $PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ConfigControls/CopyLogButton
 @onready var mod_containers: Control = main.get_node("MarginContainer/ScrollContainer/ModContainers")
 
 @onready var path_container: PathContainer = main.get_node("PathContainer")
@@ -23,15 +24,17 @@ var ue_root: String
 var gss_path: String:
 	set(value):
 		gss_path = value
-		if FileAccess.file_exists(gss_path + "/Simulatorita/Binaries/Win64/ue4ss"):
-			ue_root = gss_path + "Simulatorita/Binaries/Win64/ue4ss"
+		if DirAccess.dir_exists_absolute(gss_path + "/Simulatorita/Binaries/Win64/ue4ss"):
+			ue_root = gss_path + "/Simulatorita/Binaries/Win64/ue4ss"
 		else:
-			ue_root = gss_path + "Simulatorita/Binaries/Win64"
+			ue_root = gss_path + "/Simulatorita/Binaries/Win64"
+
 		config.set_value("main", "gss_path", gss_path)
 		config.save("user://config")
 		path_container.post_path_change()
 		update_mod_list()
 var config_changes: Dictionary = {}
+var configured_mod: String
 var config: ConfigFile
 
 # NOTE: Things like installing the mod loader and installing mods only work in exported.
@@ -91,13 +94,31 @@ func _on_configure_button_pressed() -> void:
 	main.hide()
 
 func _on_configure_mod(mod_name: String) -> void:
-	var fields = ConfigParser.parse(ue_root + "/Mods/%s/Scripts/config.lua" % mod_name)
-	for field in fields:
-		var container = ConfigFieldContainer.with(field)
-		container.write_value.connect(
-			func(field_name: String, value: String): config_changes[field_name] = value
-		)
-		mod_config_container.add_child(container)
+	configured_mod = mod_name
+	var fields = ConfigParser.parse(ue_root, mod_name)
+	if fields.is_empty():
+		var label = Label.new()
+		label.text = "Couldn't parse config, a new notepad window has been opened.\n" + \
+					 "The Mod Manager will be unresponsive until you close notepad.\n\n" + \
+					 "Config parser log (there's a Copy log button below):\n" + \
+					 ConfigParser.logs
+		
+		copy_log_button.show()
+		mod_config_container.add_child(label)
+		config_panel.show()
+		scroll_container.show()
+		main.hide()
+		
+		# OS tries to execute notepad faster than the above takes effect
+		await get_tree().create_timer(0.01).timeout
+		OS.execute("notepad", [ue_root + "/Mods/%s/Scripts/config.lua" % mod_name])
+	else:
+		for field in fields:
+			var container = ConfigFieldContainer.with(field)
+			container.write_value.connect(
+				func(field_name: String, value: String): config_changes[field_name] = value
+			)
+			mod_config_container.add_child(container)
 	config_panel.show()
 	scroll_container.show()
 	main.hide()
@@ -146,15 +167,27 @@ func os_error(action: String, err: int) -> bool:
 	return false
 
 func _on_save_config_button_pressed() -> void:
-	print("Save button not fully implemented yet!")
-	for field_name in config_changes:
-		var value = config_changes[field_name]
+	if configured_mod:
+		Files.save_config(ue_root, configured_mod, config_changes)
+		configured_mod = ""
+		hide_config_ui()
+	else:
+		# Saving for Mod Manager config here
+		hide_config_ui()
 
 func _on_cancel_config_button_pressed() -> void:
+	hide_config_ui()
+
+func hide_config_ui() -> void:
 	main.show()
 	config_panel.hide()
+	copy_log_button.hide()
 	if scroll_container.visible:
 		scroll_container.hide()
 		for child in mod_config_container.get_children():
 			mod_config_container.remove_child(child)
 	mod_manager_config_container.hide()
+
+func _on_copy_log_button_pressed() -> void:
+	# Does magic Discord formatting and copies to clipboard
+	DisplayServer.clipboard_set("Config parser log:\n```d\n%s```" % ConfigParser.logs)

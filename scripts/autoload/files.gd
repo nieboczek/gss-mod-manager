@@ -77,7 +77,6 @@ func delete_mod(ue_root: String, mod_name: String) -> Error:
 					file.store_string("\n")
 			
 			file.close()
-			print("Mod deleted successfully")
 			return OK
 		else:
 			return FileAccess.get_open_error()
@@ -106,7 +105,36 @@ func toggle_mod(ue_root: String, mod_name: String, on: bool) -> Error:
 					file.store_string("\n")
 			
 			file.close()
-			print("Mod toggled succesfully")
+			return OK
+		else:
+			return FileAccess.get_open_error()
+	else:
+		return FileAccess.get_open_error()
+
+func save_config(ue_root: String, mod_name: String, config_changes: Dictionary) -> Error:
+	print("Changes to config: ", config_changes)
+	var file = FileAccess.open(ue_root + "/Mods/%s/Scripts/config.lua" % mod_name, FileAccess.READ)
+	if file:
+		var lines = []
+		while not file.eof_reached():
+			lines.append(file.get_line())
+		file.close()
+
+		for i in range(len(lines)):
+			var line = lines[i].strip_edges()
+			for field_name in config_changes:
+				if line.begins_with(field_name):
+					lines[i] = "\t%s = %s," % [field_name, config_changes[field_name]]
+					break
+
+		file = FileAccess.open(ue_root + "/Mods/%s/Scripts/config.lua" % mod_name, FileAccess.WRITE)
+		if file:
+			for i in range(len(lines)):
+				file.store_string(lines[i])
+				if i < len(lines) - 1:
+					file.store_string("\n")
+			
+			file.close()
 			return OK
 		else:
 			return FileAccess.get_open_error()
