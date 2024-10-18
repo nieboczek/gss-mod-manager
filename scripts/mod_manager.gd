@@ -5,7 +5,7 @@ class_name ModManager extends Control
 @onready var config_panel = $PanelMarginContainer
 @onready var mod_manager_config_container = $PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ModManagerConfigContainer
 @onready var mod_config_container = $PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ScrollContainer/ModConfigContainer
-@onready var scroll_container = $PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ScrollContainer
+@onready var mod_config_scroll_container = $PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ScrollContainer
 @onready var copy_log_button = $PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ConfigControls/CopyLogButton
 @onready var mod_containers: Control = main.get_node("MarginContainer/ScrollContainer/ModContainers")
 
@@ -100,13 +100,13 @@ func _on_configure_mod(mod_name: String) -> void:
 		var label = Label.new()
 		label.text = "Couldn't parse config, a new notepad window has been opened.\n" + \
 					 "The Mod Manager will be unresponsive until you close notepad.\n\n" + \
-					 "Config parser log (there's a Copy log button below):\n" + \
+					 "Config parser log (there's a Copy log button below, send to #support on Discord):\n" + \
 					 ConfigParser.logs
 		
 		copy_log_button.show()
 		mod_config_container.add_child(label)
 		config_panel.show()
-		scroll_container.show()
+		mod_config_scroll_container.show()
 		main.hide()
 		
 		# OS tries to execute notepad faster than the above takes effect
@@ -120,7 +120,7 @@ func _on_configure_mod(mod_name: String) -> void:
 			)
 			mod_config_container.add_child(container)
 	config_panel.show()
-	scroll_container.show()
+	mod_config_scroll_container.show()
 	main.hide()
 
 func _on_delete_mod(mod_name: String) -> void:
@@ -182,8 +182,8 @@ func hide_config_ui() -> void:
 	main.show()
 	config_panel.hide()
 	copy_log_button.hide()
-	if scroll_container.visible:
-		scroll_container.hide()
+	if mod_config_scroll_container.visible:
+		mod_config_scroll_container.hide()
 		for child in mod_config_container.get_children():
 			mod_config_container.remove_child(child)
 	mod_manager_config_container.hide()

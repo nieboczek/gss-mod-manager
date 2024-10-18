@@ -167,11 +167,21 @@ func parse(ue_root: String, mod_name: String) -> Array[ConfigField]:
 					var type = line.trim_prefix("--@type ")
 					match type:
 						"Key":
-							current_field.type = Type.with("Key", func(string: String): return string.trim_prefix("Key.") in VALID_KEYS)
+							current_field.type = Type.with("Key", func(string: String):
+								return string.trim_prefix("Key.") in VALID_KEYS
+							)
 						"int":
-							current_field.type = Type.with("int", func(string: String): return string.is_valid_int())
+							current_field.type = Type.with("int", func(string: String):
+								return string.is_valid_int()
+							)
 						"float":
-							current_field.type = Type.with("float", func(string: String): return string.is_valid_float())
+							current_field.type = Type.with("float", func(string: String):
+								return string.is_valid_float()
+							)
+						"bool":
+							current_field.type = Type.with("bool", func(string: String):
+								return string == "true" or string == "false"
+							)
 						"string":
 							current_field.type = Type.with("string", validate_string)
 						_:
