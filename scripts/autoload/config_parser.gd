@@ -158,8 +158,7 @@ func parse(ue_root: String, mod_name: String) -> Array[ConfigField]:
 				
 				if re_match:
 					var re_type = re_match.get_string("type")
-					regex.compile("^(int|float|string|ModifierKey)$")
-					if regex.search(re_type) != null:
+					if re_type == "ModifierKey":
 						current_field.type = Type.list(validate_list, re_type)
 					else:
 						warn("Unsupported type for list: %s [Line %s]" % [re_type, line_number])

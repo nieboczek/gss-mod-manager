@@ -50,15 +50,27 @@ When using integers or floats you may specify a range
 ```
 Floats can have a max precision
 ```lua
+	--@description this does something
 	--@type float range=1..2 precision=2
 	--@default 1.000
 	-- you will get an error for invalid value above
+	value = 1.00
+	-- the above value will be fine
+	...
+```
+Get list of ModifierKey from user
+```lua
+	--@type list[ModifierKey]
 	...
 ```
 
 Enums (just a list of strings, and the user has to select one) will be coming soon!
 
-If you have any questions ask them on the [GSS Modding Community Discord server](https://discord.gg/5ENg4XGpPZ) or [in GitHub issues](https://github.com/nieboczek/gss-mod-manager)
+If you have any questions ask them on the [GSS Modding Community Discord server](https://discord.gg/5ENg4XGpPZ) or [in GitHub issues](https://github.com/nieboczek/gss-mod-manager/issues)
+
+### Supported types
+Currently supported and editable types: `int`, `float`, `bool`, `Key`, `string`, `list[ModifierKey]`.
+For now I don't see any need to have more types, if you have a suggestion of what would be nice, just open an issue and we can talk there.
 
 ### Example config
 ```lua
