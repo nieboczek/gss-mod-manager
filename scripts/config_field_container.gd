@@ -129,10 +129,8 @@ func post_set_config_field() -> void:
 			child.placeholder_text = "floating-point number (float)"
 			child.text_submitted.connect(_float_submitted)
 		"bool":
-			child = OptionButton.new()
-			child.add_item("true", 0)
-			child.add_item("false", 1)
-			child.item_selected.connect(_bool_submitted)
+			child = CheckBox.new()
+			child.toggled.connect(_bool_submitted)
 		"Key":
 			child = Button.new()
 			child.pressed.connect(_key_button_pressed)
@@ -151,8 +149,8 @@ func post_set_config_field() -> void:
 		else:
 			child.text = config_field.value
 			last_valid_string = child.text
-	elif child is OptionButton:
-		child.selected = 0 if config_field.value == "true" else 1
+	elif child is CheckBox:
+		child.button_pressed = config_field.value == "true"
 	elif child is Button:
 		child.text = config_field.value.replace("Key.", "") + " (Press to set key)"
 	child.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -176,8 +174,8 @@ func _input(event: InputEvent) -> void:
 func _on_modifier_keys_selected(list: String) -> void:
 	write_value.emit(config_field.name, list)
 
-func _bool_submitted(idx: int) -> void:
-	write_value.emit(config_field.name, "true" if idx == 0 else "false")
+func _bool_submitted(toggled_on: bool) -> void:
+	write_value.emit(config_field.name, str(toggled_on))
 
 func _key_button_pressed() -> void:
 	child.text = "Waiting for key press..."
@@ -230,8 +228,8 @@ func _on_reset_to_default_button_pressed() -> void:
 		else:
 			child.text = config_field.default
 		last_valid_string = child.text
-	elif child is OptionButton:
-		child.selected = 0 if config_field.default == "true" else 1
+	elif child is CheckBox:
+		child.button_pressed = config_field.default == "true"
 	elif child is Button:
 		child.text = config_field.default.replace("Key.", "") + " (Press to set key)"
 	elif child is ModifierKeySelect:
