@@ -11,7 +11,7 @@ signal configure(mod_name: String)
 var mod_name: String
 
 static func with(new_mod_name: String) -> ModContainer:
-	var container = preload("res://mod_container.tscn").instantiate()
+	var container = preload("res://scenes/mod_container.tscn").instantiate()
 	container.mod_name = new_mod_name
 	return container
 

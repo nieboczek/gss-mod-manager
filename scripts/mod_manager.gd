@@ -2,7 +2,11 @@ class_name ModManager extends Control
 
 @onready var main = $MarginContainer/MainContainer
 @onready var file_dialog = $FileDialog
-@onready var config_panel = $ConfigPanel
+@onready var config_panel = $PanelMarginContainer
+@onready var mod_manager_config_container = $PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ModManagerConfigContainer
+@onready var mod_config_container = $PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ScrollContainer/ModConfigContainer
+@onready var mod_config_scroll_container = $PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ScrollContainer
+@onready var copy_log_button = $PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ConfigControls/CopyLogButton
 @onready var mod_containers: Control = main.get_node("MarginContainer/ScrollContainer/ModContainers")
 
 @onready var path_container: PathContainer = main.get_node("PathContainer")
@@ -20,23 +24,21 @@ var ue_root: String
 var gss_path: String:
 	set(value):
 		gss_path = value
-		if FileAccess.file_exists(gss_path + "/Simulatorita/Binaries/Win64/ue4ss"):
-			ue_root = gss_path + "Simulatorita/Binaries/Win64/ue4ss"
+		if DirAccess.dir_exists_absolute(gss_path + "/Simulatorita/Binaries/Win64/ue4ss"):
+			ue_root = gss_path + "/Simulatorita/Binaries/Win64/ue4ss"
 		else:
-			ue_root = gss_path + "Simulatorita/Binaries/Win64"
+			ue_root = gss_path + "/Simulatorita/Binaries/Win64"
+
 		config.set_value("main", "gss_path", gss_path)
 		config.save("user://config")
 		path_container.post_path_change()
 		update_mod_list()
+var config_changes: Dictionary = {}
+var configured_mod: String
 var config: ConfigFile
-var config_editor_path: String
-var editor_thread := Thread.new()
 
-# NOTE: Only test in exported! (Unless you find a way to do it in the editor)
+# NOTE: Things like installing the mod loader and installing mods only work in exported.
 
-# TODO: Make editor for editing config configurable
-# ^^^^^ Better, alternative solution: Try to make a standard on how to write config.
-# ^^^^^ Then make the config editor built in (Topic to discuss)
 # TODO: Get icon
 
 ## Returns dictionary with the schema { mod_name (String): on (bool) }
@@ -76,6 +78,9 @@ func update_mod_list() -> void:
 		mod_containers.add_child(container)
 		
 		container.set_toggled(list[mod])
+		container.set_configurable(FileAccess.file_exists(
+			ue_root + "/Mods/%s/Scripts/config.lua" % mod
+		))
 		container.configure.connect(_on_configure_mod)
 		container.delete.connect(_on_delete_mod)
 		container.toggled.connect(_on_toggle_mod)
@@ -83,88 +88,50 @@ func update_mod_list() -> void:
 	
 	mod_list_container.set_count(non_builtin_mod_count)
 
-func run_config_editor() -> void:
-	var err = OS.execute("notepad", [config_editor_path])
-	os_error("Execute config editor", err)
+func _on_configure_button_pressed() -> void:
+	config_panel.show()
+	mod_manager_config_container.show()
+	main.hide()
 
 func _on_configure_mod(mod_name: String) -> void:
-	for file in DirAccess.get_files_at(ue_root + "/Mods/%s/Scripts" % mod_name):
-		if file.begins_with("config"):
-			config_editor_path = ue_root + "/Mods/%s/Scripts/%s" % [mod_name, file]
-			var err = editor_thread.start(run_config_editor, Thread.PRIORITY_LOW)
-			error("Execute notepad in thread", err)
-			return
+	configured_mod = mod_name
+	var fields = ConfigParser.parse(ue_root, mod_name)
+	if fields.is_empty():
+		var label = Label.new()
+		label.text = "Couldn't parse config, a new notepad window has been opened.\n" + \
+					 "The Mod Manager will be unresponsive until you close notepad.\n\n" + \
+					 "Config parser log (there's a Copy log button below, send to #support on Discord):\n" + \
+					 ConfigParser.logs
+		
+		copy_log_button.show()
+		mod_config_container.add_child(label)
+		config_panel.show()
+		mod_config_scroll_container.show()
+		main.hide()
+		
+		# OS tries to execute notepad faster than the above takes effect
+		await get_tree().create_timer(0.01).timeout
+		OS.execute("notepad", [ue_root + "/Mods/%s/Scripts/config.lua" % mod_name])
+	else:
+		for field in fields:
+			var container = ConfigFieldContainer.with(field)
+			container.write_value.connect(
+				func(field_name: String, value: String): config_changes[field_name] = value
+			)
+			mod_config_container.add_child(container)
+	config_panel.show()
+	mod_config_scroll_container.show()
+	main.hide()
 
 func _on_delete_mod(mod_name: String) -> void:
-	Files.remove_recursive(ue_root + "/Mods/%s" % mod_name)
-	var file = FileAccess.open(ue_root + "/Mods/mods.txt", FileAccess.READ)
-	if file:
-		var lines = []
-		while not file.eof_reached():
-			lines.append(file.get_line())
-		file.close()
-		
-		var new_lines = []
-		for line in lines:
-			if not line.begins_with(mod_name + " : "):
-				new_lines.append(line)
-		
-		file = FileAccess.open(ue_root + "/Mods/mods.txt", FileAccess.WRITE)
-		if file:
-			for i in range(len(new_lines)):
-				file.store_string(new_lines[i])
-				if i < len(new_lines) - 1:
-					file.store_string("\n")
-			
-			file.close()
-			update_mod_list()
-			print("Mod deleted successfully")
-		else:
-			var err = FileAccess.get_open_error()
-			error("Open mods.txt file", err)
-	else:
-		var err = FileAccess.get_open_error()
-		error("Open mods.txt file", err)
-
-func _on_configure_button_pressed() -> void:
-	config_panel.visible = !config_panel.visible
+	if not error("Remove mod", Files.remove_mod(ue_root, mod_name)):
+		update_mod_list()
 
 func _on_toggle_mod(mod_name: String, on: bool) -> void:
-	var file = FileAccess.open(ue_root + "/Mods/mods.txt", FileAccess.READ)
-	if file:
-		var lines = []
-		while not file.eof_reached():
-			lines.append(file.get_line())
-		file.close()
-		
-		for i in range(len(lines)):
-			if lines[i].begins_with(mod_name + " : "):
-				var new_value = '1' if on else '0'
-				lines[i] = mod_name + " : " + new_value
-				break
-		
-		file = FileAccess.open(ue_root + "/Mods/mods.txt", FileAccess.WRITE)
-		if file:
-			for i in range(len(lines)):
-				file.store_string(lines[i])
-				if i < len(lines) - 1:
-					file.store_string("\n")
-			
-			file.close()
-			print("Mod toggled succesfully")
-		else:
-			var err = FileAccess.get_open_error()
-			error("Opening mods.txt file", err)
-	else:
-		var err = FileAccess.get_open_error()
-		error("Opening mods.txt file", err)
+	error("Toggle mod", Files.toggle_mod(ue_root, mod_name, on))
 
 func _on_file_dialog_gss_path_selected(dir: String) -> void:
 	gss_path = dir
-
-func _process(_delta: float) -> void:
-	if editor_thread.is_started() and !editor_thread.is_alive():
-		editor_thread.wait_to_finish()
 
 func _ready() -> void:
 	# Set self as the ModManager in containers
@@ -186,7 +153,7 @@ func _ready() -> void:
 		gss_path = path
 
 ## Returns a boolean that if is true, action didn't complete successfully
-func error(action: String, err: int) -> bool:
+func error(action: String, err: Error) -> bool:
 	if err:
 		print("%s status: %s [%s]" % [action, error_string(err), err])
 		return true
@@ -198,3 +165,29 @@ func os_error(action: String, err: int) -> bool:
 		print("%s exit code: FAILED [%s]" % [action, err])
 		return true
 	return false
+
+func _on_save_config_button_pressed() -> void:
+	if configured_mod:
+		Files.save_config(ue_root, configured_mod, config_changes)
+		configured_mod = ""
+		hide_config_ui()
+	else:
+		# Saving for Mod Manager config here
+		hide_config_ui()
+
+func _on_cancel_config_button_pressed() -> void:
+	hide_config_ui()
+
+func hide_config_ui() -> void:
+	main.show()
+	config_panel.hide()
+	copy_log_button.hide()
+	if mod_config_scroll_container.visible:
+		mod_config_scroll_container.hide()
+		for child in mod_config_container.get_children():
+			mod_config_container.remove_child(child)
+	mod_manager_config_container.hide()
+
+func _on_copy_log_button_pressed() -> void:
+	# Does magic Discord formatting and copies to clipboard
+	DisplayServer.clipboard_set("Config parser log:\n```d\n%s```" % ConfigParser.logs)

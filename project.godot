@@ -12,13 +12,14 @@ config_version=5
 
 config/name="GSS Mod Manager"
 config/description="Mod Manager for Grocery Store Simulator built using Godot"
-run/main_scene="res://mod_manager.tscn"
+run/main_scene="res://scenes/mod_manager.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
 config/icon="res://icon.svg"
 
 [autoload]
 
-Files="*res://scripts/files.gd"
+ConfigParser="*res://scripts/autoload/config_parser.gd"
+Files="*res://scripts/autoload/files.gd"
 
 [rendering]
 

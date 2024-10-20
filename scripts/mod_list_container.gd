@@ -10,7 +10,7 @@ func _on_refresh_button_pressed() -> void:
 
 func _on_install_mod_button_pressed() -> void:
 	mm.file_dialog.file_mode = FileDialog.FileMode.FILE_MODE_OPEN_FILE
-	mm.file_dialog.root_subfolder = "%s\\Downloads" % OS.get_environment("USERPROFILE")
+	mm.file_dialog.root_subfolder = OS.get_environment("USERPROFILE") + "/Downloads"
 	mm.file_dialog.popup()
 
 func set_install_disabled(disabled: bool) -> void:

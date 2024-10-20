@@ -1,0 +1,29 @@
+[gd_scene load_steps=3 format=3 uid="uid://b3b0uj72js0wp"]
+
+[ext_resource type="Theme" uid="uid://dged4041swr1" path="res://theme.tres" id="1_10yj6"]
+[ext_resource type="Script" path="res://scripts/modifier_key_select.gd" id="2_durmd"]
+
+[node name="ModifierKeySelect" type="VBoxContainer"]
+size_flags_horizontal = 3
+theme = ExtResource("1_10yj6")
+theme_override_constants/separation = -8
+script = ExtResource("2_durmd")
+
+[node name="ControlCheck" type="CheckBox" parent="."]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "CONTROL"
+
+[node name="ShiftCheck" type="CheckBox" parent="."]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "SHIFT"
+
+[node name="AltCheck" type="CheckBox" parent="."]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "ALT"
+
+[connection signal="toggled" from="ControlCheck" to="." method="_on_control_check_toggled"]
+[connection signal="toggled" from="ShiftCheck" to="." method="_on_shift_check_toggled"]
+[connection signal="toggled" from="AltCheck" to="." method="_on_alt_check_toggled"]

@@ -1,0 +1,39 @@
+[gd_scene load_steps=4 format=3 uid="uid://proip8hh61wi"]
+
+[ext_resource type="Theme" uid="uid://dged4041swr1" path="res://theme.tres" id="1_1skrl"]
+[ext_resource type="Script" path="res://scripts/config_field_container.gd" id="1_2i062"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_42mmw"]
+line_spacing = -6.0
+font_color = Color(0.753984, 0.753984, 0.753984, 1)
+
+[node name="ConfigFieldContainer" type="VBoxContainer"]
+custom_minimum_size = Vector2(600, 61)
+offset_right = 42.0
+offset_bottom = 34.0
+theme = ExtResource("1_1skrl")
+script = ExtResource("1_2i062")
+
+[node name="OptionsContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="FieldNameLabel" type="Label" parent="OptionsContainer"]
+layout_mode = 2
+text = "FieldNameLabel"
+
+[node name="Placeholder" type="Control" parent="OptionsContainer"]
+layout_mode = 2
+
+[node name="ResetToDefaultButton" type="Button" parent="OptionsContainer"]
+layout_mode = 2
+text = "Reset to default"
+
+[node name="DescriptionLabel" type="Label" parent="."]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.712129, 0.712129, 0.712129, 1)
+theme_override_font_sizes/font_size = 16
+text = "DescriptionLabel"
+label_settings = SubResource("LabelSettings_42mmw")
+
+[connection signal="pressed" from="OptionsContainer/ResetToDefaultButton" to="." method="_on_reset_to_default_button_pressed"]
