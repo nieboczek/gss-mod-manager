@@ -1,5 +1,6 @@
 class_name ModManager extends Control
 
+@onready var http = $HTTPRequest
 @onready var main = $MarginContainer/MainContainer
 @onready var file_dialog = $FileDialog
 @onready var config_panel = $PanelMarginContainer
@@ -7,17 +8,14 @@ class_name ModManager extends Control
 @onready var mod_config_container = $PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ScrollContainer/ModConfigContainer
 @onready var mod_config_scroll_container = $PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ScrollContainer
 @onready var copy_log_button = $PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ConfigControls/CopyLogButton
+@onready var update_label = $PopupMarginContainer/PanelContainer/MainContainer/UpdateLabel
+@onready var popup = $PopupMarginContainer
 @onready var mod_containers: Control = main.get_node("MarginContainer/ScrollContainer/ModContainers")
 
+@onready var mod_manager_label := main.get_node("ModManagerContainer/ModManagerLabel")
 @onready var path_container: PathContainer = main.get_node("PathContainer")
 @onready var mod_loader_container: ModLoaderContainer = main.get_node("ModLoaderContainer")
 @onready var mod_list_container: ModListContainer = main.get_node("ModListContainer")
-
-const BUILTIN_MODS: Array[String] = [
-	"ActorDumperMod", "BPML_GenericFunctions", "BPModLoaderMod",
-	"CheatManagerEnablerMod", "ConsoleCommandsMod", "ConsoleEnablerMod",
-	"jsbLuaProfilerMod", "Keybinds", "LineTraceMod", "SplitScreenMod"
-]
 
 var exe_path := OS.get_executable_path().get_base_dir()
 var ue_root: String
@@ -37,10 +35,18 @@ var config_changes: Dictionary = {}
 var configured_mod: String
 var config: ConfigFile
 
+const BUILTIN_MODS: Array[String] = [
+	"ActorDumperMod", "BPML_GenericFunctions", "BPModLoaderMod",
+	"CheatManagerEnablerMod", "ConsoleCommandsMod", "ConsoleEnablerMod",
+	"jsbLuaProfilerMod", "Keybinds", "LineTraceMod", "SplitScreenMod"
+]
+const VERSION: String = "v0.5.0"
+
 # NOTE: Things like installing the mod loader and installing mods only work in exported.
 
 # TODO: Get icon
 
+## Returns the list of Lua mods
 ## Returns dictionary with the schema { mod_name (String): on (bool) }
 func get_mod_list() -> Dictionary:
 	var enabled: Dictionary = {}
@@ -59,6 +65,26 @@ func get_mod_list() -> Dictionary:
 		error("Opening mods.txt file", err)
 	return enabled
 
+## `get_mod_list`, but returns list of Blueprint mods
+func get_blueprint_mod_list() -> Dictionary:
+	if DirAccess.dir_exists_absolute(gss_path + "/Simulatorita/Content/Paks/LogicMods"):
+		var mods := {}
+		var fs_mods := \
+			DirAccess.get_files_at(gss_path + "/Simulatorita/Content/Paks/LogicMods")
+		
+		for mod in fs_mods:
+			if mod.ends_with(".pak"):
+				mod = mod.trim_suffix(".pak")
+				mods[mod] = true
+			elif mod.ends_with(".pak.disabled"):
+				mod = mod.trim_suffix(".pak.disabled")
+				mods[mod] = false
+		return mods
+	else:
+		var err = DirAccess.make_dir_absolute(gss_path + "/Simulatorita/Content/Paks/LogicMods")
+		if error("Create LogicMods directory", err): return {}
+		return get_blueprint_mod_list()
+
 ## Updates the UI for mods not built-in
 func update_mod_list() -> void:
 	if !mod_loader_container.is_installed:
@@ -69,21 +95,35 @@ func update_mod_list() -> void:
 	for child in mod_containers.get_children():
 		child.queue_free()
 	
-	var list = get_mod_list()
+	var mods = get_mod_list()
+	var bp_mods = get_blueprint_mod_list()
 	var non_builtin_mod_count = 0
-	for mod in list:
+	for mod in mods:
 		if mod in BUILTIN_MODS:
 			continue
-		var container = ModContainer.with(mod)
+		var container := ModContainer.with(mod)
 		mod_containers.add_child(container)
 		
-		container.set_toggled(list[mod])
+		container.set_toggled(mods[mod])
 		container.set_configurable(FileAccess.file_exists(
 			ue_root + "/Mods/%s/Scripts/config.lua" % mod
 		))
 		container.configure.connect(_on_configure_mod)
 		container.delete.connect(_on_delete_mod)
 		container.toggled.connect(_on_toggle_mod)
+		
+		non_builtin_mod_count += 1
+	
+	for mod in bp_mods:
+		var container := ModContainer.with(mod)
+		mod_containers.add_child(container)
+		
+		container.blueprint = true
+		container.set_toggled(bp_mods[mod])
+		container.set_configurable(false)
+		container.blueprint_delete.connect(_on_delete_blueprint_mod)
+		container.blueprint_toggled.connect(_on_toggle_blueprint_mod)
+		
 		non_builtin_mod_count += 1
 	
 	mod_list_container.set_count(non_builtin_mod_count)
@@ -127,6 +167,33 @@ func _on_delete_mod(mod_name: String) -> void:
 	if not error("Remove mod", Files.remove_mod(ue_root, mod_name)):
 		update_mod_list()
 
+func _on_delete_blueprint_mod(mod_name: String) -> void:
+	var mod_path := gss_path + "/Simulatorita/Content/Paks/LogicMods/" + mod_name
+	var err := DirAccess.remove_absolute(mod_path + ".pak")
+	error("Delete Blueprint .pak", err)
+	err = DirAccess.remove_absolute(mod_path + ".utoc")
+	error("Delete Blueprint .utoc", err)
+	err = DirAccess.remove_absolute(mod_path + ".ucas")
+	error("Delete Blueprint .ucas", err)
+	update_mod_list()
+
+func _on_toggle_blueprint_mod(mod_name: String, on: bool) -> void:
+	var mod_path := gss_path + "/Simulatorita/Content/Paks/LogicMods/" + mod_name
+	if on:
+		var err := DirAccess.rename_absolute(mod_path + ".pak.disabled", mod_path + ".pak")
+		error("Rename Blueprint .pak", err)
+		err = DirAccess.rename_absolute(mod_path + ".utoc.disabled", mod_path + ".utoc")
+		error("Rename Blueprint .utoc", err)
+		err = DirAccess.rename_absolute(mod_path + ".ucas.disabled", mod_path + ".ucas")
+		error("Rename Blueprint .ucas", err)
+	else:
+		var err := DirAccess.rename_absolute(mod_path + ".pak", mod_path + ".pak.disabled")
+		error("Disable Blueprint .pak", err)
+		err = DirAccess.rename_absolute(mod_path + ".utoc", mod_path + ".utoc.disabled")
+		error("Disable Blueprint .utoc", err)
+		err = DirAccess.rename_absolute(mod_path + ".ucas", mod_path + ".ucas.disabled")
+		error("Disable Blueprint .ucas", err)
+
 func _on_toggle_mod(mod_name: String, on: bool) -> void:
 	error("Toggle mod", Files.toggle_mod(ue_root, mod_name, on))
 
@@ -140,7 +207,7 @@ func _ready() -> void:
 	mod_list_container.mm = self
 	
 	config = ConfigFile.new()
-	var err = config.load("user://config")
+	var err := config.load("user://config")
 	if err == ERR_FILE_NOT_FOUND:
 		path_container.detect_gss()
 	else:
@@ -151,6 +218,10 @@ func _ready() -> void:
 		path_container.detect_gss()
 	else:
 		gss_path = path
+	
+	mod_manager_label.text = "GSS Mod Manager " + VERSION
+	err = http.request("https://api.github.com/repos/nieboczek/gss-mod-manager/releases/latest")
+	error("Initiate HTTP request", err)
 
 ## Returns a boolean that if is true, action didn't complete successfully
 func error(action: String, err: Error) -> bool:
@@ -191,3 +262,18 @@ func hide_config_ui() -> void:
 func _on_copy_log_button_pressed() -> void:
 	# Does magic Discord formatting and copies to clipboard
 	DisplayServer.clipboard_set("Config parser log:\n```d\n%s```" % ConfigParser.logs)
+
+func _on_http_request_completed(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray) -> void:
+	if !error("Request update data", result):
+		var json = JSON.parse_string(body.get_string_from_utf8())
+		if json and json["tag_name"] != VERSION:
+			update_label.text = \
+				"A new version of GSS Mod Manager is avaliable!\n" + \
+				"(current: %s; latest: %s)" % [VERSION, json["tag_name"]]
+			popup.show()
+
+func _on_open_link_button_pressed() -> void:
+	OS.shell_open("https://github.com/nieboczek/gss-mod-manager/releases/latest")
+
+func _on_update_close_button_pressed() -> void:
+	popup.hide()

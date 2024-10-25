@@ -32,27 +32,36 @@ func _on_file_dialog_mod_selected(path: String) -> void:
 		if mod not in mods:
 			mod_name = mod
 	
-	# Add "mod_name : 1" to mods.txt
-	var file = FileAccess.open(mm.ue_root + "/Mods/mods.txt", FileAccess.READ)
-	if file:
-		var lines = []
-		while not file.eof_reached():
-			lines.append(file.get_line())
-		file.close()
-		lines.append(mod_name + " : 1")
-		
-		file = FileAccess.open(mm.ue_root + "/Mods/mods.txt", FileAccess.WRITE)
+	var bp_mods := DirAccess.get_files_at(mm.ue_root + "/Mods")
+	for mod in bp_mods:
+		if mod.ends_with(".utoc") or mod.ends_with(".pak") or mod.ends_with(".ucas"):
+			err = DirAccess.rename_absolute(
+				mm.ue_root + "/Mods/" + mod,
+				mm.gss_path + "/Simulatorita/Content/Paks/LogicMods/" + mod
+			)
+			if mm.error("Move Blueprint mod files", err): return
+	
+	if mod_name:
+		# Add "mod_name : 1" to mods.txt
+		var file = FileAccess.open(mm.ue_root + "/Mods/mods.txt", FileAccess.READ)
 		if file:
-			for i in range(len(lines)):
-				file.store_string(lines[i])
-				if i < len(lines) - 1:
-					file.store_string("\n")
+			var lines = []
+			while not file.eof_reached():
+				lines.append(file.get_line())
 			file.close()
-			mm.update_mod_list()
-			print("Mod added successfully")
+			lines.append(mod_name + " : 1")
+			
+			file = FileAccess.open(mm.ue_root + "/Mods/mods.txt", FileAccess.WRITE)
+			if file:
+				for i in range(len(lines)):
+					file.store_string(lines[i])
+					if i < len(lines) - 1:
+						file.store_string("\n")
+				file.close()
+				mm.update_mod_list()
+			else:
+				err = FileAccess.get_open_error()
+				mm.error("Open mods.txt file", err)
 		else:
 			err = FileAccess.get_open_error()
 			mm.error("Open mods.txt file", err)
-	else:
-		err = FileAccess.get_open_error()
-		mm.error("Open mods.txt file", err)

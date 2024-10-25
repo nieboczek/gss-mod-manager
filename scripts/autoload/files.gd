@@ -54,7 +54,7 @@ func remove_recursive(path: String) -> Error:
 		return DirAccess.get_open_error()
 	return OK
 
-func delete_mod(ue_root: String, mod_name: String) -> Error:
+func remove_mod(ue_root: String, mod_name: String) -> Error:
 	var err = remove_recursive(ue_root + "/Mods/" + mod_name)
 	if err: return err
 	var file = FileAccess.open(ue_root + "/Mods/mods.txt", FileAccess.READ)
