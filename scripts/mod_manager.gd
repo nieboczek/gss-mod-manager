@@ -8,6 +8,7 @@ class_name ModManager extends Control
 @onready var mod_config_container = $PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ScrollContainer/ModConfigContainer
 @onready var mod_config_scroll_container = $PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ScrollContainer
 @onready var copy_log_button = $PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ConfigControls/CopyLogButton
+@onready var update_description_label = $PopupMarginContainer/PanelContainer/MainContainer/DescriptionMargin/UpdateDescriptionLabel
 @onready var update_label = $PopupMarginContainer/PanelContainer/MainContainer/UpdateLabel
 @onready var popup = $PopupMarginContainer
 @onready var mod_containers: Control = main.get_node("MarginContainer/ScrollContainer/ModContainers")
@@ -40,7 +41,7 @@ const BUILTIN_MODS: Array[String] = [
 	"CheatManagerEnablerMod", "ConsoleCommandsMod", "ConsoleEnablerMod",
 	"jsbLuaProfilerMod", "Keybinds", "LineTraceMod", "SplitScreenMod"
 ]
-const VERSION: String = "v0.5.0"
+const VERSION: String = "v0.6.0"
 
 # NOTE: Things like installing the mod loader and installing mods only work in exported.
 
@@ -138,10 +139,11 @@ func _on_configure_mod(mod_name: String) -> void:
 	var fields = ConfigParser.parse(ue_root, mod_name)
 	if fields.is_empty():
 		var label = Label.new()
-		label.text = "Couldn't parse config, a new notepad window has been opened.\n" + \
-					 "The Mod Manager will be unresponsive until you close notepad.\n\n" + \
-					 "Config parser log (there's a Copy log button below, send to #support on Discord):\n" + \
-					 ConfigParser.logs
+		label.text = \
+			"Couldn't parse config, a new notepad window has been opened.\n" + \
+			"Edit the config in notepad, then save and close notepad.\n\n" + \
+			"Config parser log (there's a Copy log button below, send to #support on Discord):\n" + \
+			ConfigParser.logs
 		
 		copy_log_button.show()
 		mod_config_container.add_child(label)
@@ -149,9 +151,7 @@ func _on_configure_mod(mod_name: String) -> void:
 		mod_config_scroll_container.show()
 		main.hide()
 		
-		# OS tries to execute notepad faster than the above takes effect
-		await get_tree().create_timer(0.01).timeout
-		OS.execute("notepad", [ue_root + "/Mods/%s/Scripts/config.lua" % mod_name])
+		OS.execute_with_pipe("notepad", [ue_root + "/Mods/%s/Scripts/config.lua" % mod_name])
 	else:
 		for field in fields:
 			var container = ConfigFieldContainer.with(field)
@@ -210,7 +210,7 @@ func _ready() -> void:
 	var err := config.load("user://config")
 	if err == ERR_FILE_NOT_FOUND:
 		path_container.detect_gss()
-	else:
+	elif err != OK:
 		error("Read user config", err)
 	
 	var path: String = config.get_value("main", "gss_path")
@@ -219,9 +219,12 @@ func _ready() -> void:
 	else:
 		gss_path = path
 	
+	error("Read mod manager config", mod_manager_config_container.load_from(ue_root, config))
 	mod_manager_label.text = "GSS Mod Manager " + VERSION
-	err = http.request("https://api.github.com/repos/nieboczek/gss-mod-manager/releases/latest")
-	error("Initiate HTTP request", err)
+	
+	if mod_manager_config_container.check_for_updates:
+		err = http.request("https://api.github.com/repos/nieboczek/gss-mod-manager/releases/latest")
+		error("Initiate HTTP request", err)
 
 ## Returns a boolean that if is true, action didn't complete successfully
 func error(action: String, err: Error) -> bool:
@@ -243,10 +246,12 @@ func _on_save_config_button_pressed() -> void:
 		configured_mod = ""
 		hide_config_ui()
 	else:
-		# Saving for Mod Manager config here
+		error("Save mod manager config", mod_manager_config_container.save(ue_root, config))
 		hide_config_ui()
 
 func _on_cancel_config_button_pressed() -> void:
+	if configured_mod.is_empty():
+		mod_manager_config_container.cancel()
 	hide_config_ui()
 
 func hide_config_ui() -> void:
@@ -260,19 +265,20 @@ func hide_config_ui() -> void:
 	mod_manager_config_container.hide()
 
 func _on_copy_log_button_pressed() -> void:
-	# Does magic Discord formatting and copies to clipboard
 	DisplayServer.clipboard_set("Config parser log:\n```d\n%s```" % ConfigParser.logs)
 
-func _on_http_request_completed(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray) -> void:
+func _on_http_request_completed(result: int, _response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
 	if !error("Request update data", result):
 		var json = JSON.parse_string(body.get_string_from_utf8())
 		if json and json["tag_name"] != VERSION:
 			update_label.text = \
 				"A new version of GSS Mod Manager is avaliable!\n" + \
-				"(current: %s; latest: %s)" % [VERSION, json["tag_name"]]
+				"(current: %s; latest: %s)\n" % [VERSION, json["tag_name"]] + \
+				"Update description:"
+			update_description_label.text = json["body"]
 			popup.show()
 
-func _on_open_link_button_pressed() -> void:
+func _on_open_update_link_button_pressed() -> void:
 	OS.shell_open("https://github.com/nieboczek/gss-mod-manager/releases/latest")
 
 func _on_update_close_button_pressed() -> void:
