@@ -224,7 +224,6 @@ layout_mode = 2
 text = "Copy log"
 
 [node name="PopupMarginContainer" type="MarginContainer" parent="."]
-visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -244,27 +243,37 @@ theme_override_styles/panel = ExtResource("6_7hd73")
 layout_mode = 2
 alignment = 1
 
-[node name="UpdateLabel" type="Label" parent="PopupMarginContainer/PanelContainer/MainContainer"]
+[node name="HeaderLabel" type="Label" parent="PopupMarginContainer/PanelContainer/MainContainer"]
 layout_mode = 2
-text = "A new version of GSS Mod Manager is avaliable!
-(current: ; latest: )
-Update description:"
+text = "HeaderLabel"
 horizontal_alignment = 1
 
-[node name="DescriptionMargin" type="MarginContainer" parent="PopupMarginContainer/PanelContainer/MainContainer"]
+[node name="UpdateDescriptionMargin" type="MarginContainer" parent="PopupMarginContainer/PanelContainer/MainContainer"]
+visible = false
 layout_mode = 2
 theme_override_constants/margin_left = 16
 theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 24
 
-[node name="UpdateDescriptionLabel" type="Label" parent="PopupMarginContainer/PanelContainer/MainContainer/DescriptionMargin"]
+[node name="UpdateDescriptionLabel" type="Label" parent="PopupMarginContainer/PanelContainer/MainContainer/UpdateDescriptionMargin"]
 layout_mode = 2
+text = "hello world this adds something lfmao
+lfma
+mlfm
+lmf
+lmf
+lmf
+lmf
+lmf
+lmf
+"
 
 [node name="ControlsContainer" type="HBoxContainer" parent="PopupMarginContainer/PanelContainer/MainContainer"]
 layout_mode = 2
 alignment = 1
 
 [node name="OpenUpdateLinkButton" type="Button" parent="PopupMarginContainer/PanelContainer/MainContainer/ControlsContainer"]
+visible = false
 layout_mode = 2
 text = "Open update link"
 
@@ -298,7 +307,7 @@ use_native_dialog = true
 [connection signal="pressed" from="PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ConfigControls/CancelButton" to="." method="_on_cancel_config_button_pressed"]
 [connection signal="pressed" from="PanelMarginContainer/PanelContainer/MarginContainer/ConfigContainer/ConfigControls/CopyLogButton" to="." method="_on_copy_log_button_pressed"]
 [connection signal="pressed" from="PopupMarginContainer/PanelContainer/MainContainer/ControlsContainer/OpenUpdateLinkButton" to="." method="_on_open_update_link_button_pressed"]
-[connection signal="pressed" from="PopupMarginContainer/PanelContainer/MainContainer/ControlsContainer/CloseButton" to="." method="_on_update_close_button_pressed"]
+[connection signal="pressed" from="PopupMarginContainer/PanelContainer/MainContainer/ControlsContainer/CloseButton" to="." method="_on_close_button_pressed"]
 [connection signal="dir_selected" from="FileDialog" to="." method="_on_file_dialog_gss_path_selected"]
 [connection signal="file_selected" from="FileDialog" to="MarginContainer/MainContainer/ModListContainer" method="_on_file_dialog_mod_selected"]
 [connection signal="request_completed" from="HTTPRequest" to="." method="_on_http_request_completed"]

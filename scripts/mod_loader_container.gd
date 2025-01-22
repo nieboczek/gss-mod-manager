@@ -6,6 +6,7 @@ class_name ModLoaderContainer extends HBoxContainer
 var is_installed := false
 var mm: ModManager
 
+
 func _on_mod_loader_install_button_pressed() -> void:
 	if is_installed:
 		Files.remove_recursive(mm.ue_root + "/Mods")
@@ -17,12 +18,15 @@ func _on_mod_loader_install_button_pressed() -> void:
 	set_installed(!is_installed)
 	mm.update_mod_list()
 
+
 func check_installed() -> void:
 	var installed = FileAccess.file_exists(mm.ue_root + "/UE4SS.dll")
 	set_installed(installed)
 
+
 func set_install_disabled(disabled: bool) -> void:
 	mod_loader_install_button.disabled = disabled
+
 
 func set_installed(installed: bool) -> void:
 	is_installed = installed
